@@ -336,20 +336,53 @@ class TradingAPI:
             """
             Get eligible stocks in frontend Stock format
             
+            IMPORTANT: This endpoint returns EMPTY data by default to prevent automatic API calls.
+            Use POST /api/stocks/scan to actually fetch market data.
+            
             Returns:
-                JSON: List of stocks matching frontend Stock interface
+                JSON: Empty list (use POST /api/stocks/scan to fetch real data)
             """
             # Handle preflight OPTIONS request
             if request.method == 'OPTIONS':
                 return jsonify({'success': True}), 200
                 
             try:
-                logger.info("API /api/stocks: Request received")
+                logger.info("API /api/stocks: Request received (returning empty - use POST /api/stocks/scan to fetch)")
                 
-                # Get top stocks from analyzer
+                # Return empty stocks list to prevent automatic API calls
+                # Frontend must explicitly call POST /api/stocks/scan to fetch data
+                return jsonify({
+                    'success': True,
+                    'stocks': [],
+                    'message': 'Use POST /api/stocks/scan to fetch market data'
+                }), 200
+                
+            except Exception as e:
+                logger.exception(f"Error in /api/stocks: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': str(e),
+                    'stocks': []
+                }), 500
+        
+        @self.app.route('/api/stocks/scan', methods=['POST'])
+        def scan_stocks():
+            """
+            Scan and fetch eligible stocks from market (MANUAL TRIGGER ONLY)
+            
+            This endpoint actually fetches data from AngelOne API.
+            Should only be called when user clicks "Scan Now" button.
+            
+            Returns:
+                JSON: List of stocks matching frontend Stock interface
+            """
+            try:
+                logger.info("API /api/stocks/scan: Manual scan triggered")
+                
+                # Get top stocks from analyzer (THIS MAKES API CALLS)
                 top_stocks = self.stock_analyzer.get_top_n_stocks(n=config.MAX_COMPANIES)
                 
-                logger.info(f"API /api/stocks: Found {len(top_stocks)} top stocks")
+                logger.info(f"API /api/stocks/scan: Found {len(top_stocks)} top stocks")
                 
                 # Format to match frontend Stock interface
                 stocks = []
@@ -377,26 +410,26 @@ class TradingAPI:
                         'orderStatus': 'simulated' if is_allocated else 'pending'
                     }
                     stocks.append(stock_data)
-                    logger.debug(f"API /api/stocks: Added stock {stock['symbol']}: {stock_data}")
+                    logger.debug(f"API /api/stocks/scan: Added stock {stock['symbol']}: {stock_data}")
                 
-                logger.info(f"API /api/stocks: Returning {len(stocks)} stocks to frontend")
+                logger.info(f"API /api/stocks/scan: Returning {len(stocks)} stocks to frontend")
                 
                 if len(stocks) == 0:
-                    logger.warning("API /api/stocks: No eligible stocks found (empty array being returned)")
+                    logger.warning("API /api/stocks/scan: No eligible stocks found (empty array being returned)")
                 else:
-                    logger.info(f"API /api/stocks: Eligible stocks: {[s['symbol'] for s in stocks]}")
+                    logger.info(f"API /api/stocks/scan: Eligible stocks: {[s['symbol'] for s in stocks]}")
                 
                 response_data = {
                     'success': True,
                     'stocks': stocks
                 }
                 
-                logger.info(f"API /api/stocks: Response data: {json.dumps(response_data, indent=2)}")
+                logger.info(f"API /api/stocks/scan: Response data: {json.dumps(response_data, indent=2)}")
                 
                 return jsonify(response_data), 200
                 
             except Exception as e:
-                logger.exception(f"Error getting stocks: {e}")
+                logger.exception(f"Error scanning stocks: {e}")
                 return jsonify({
                     'success': False,
                     'error': str(e),

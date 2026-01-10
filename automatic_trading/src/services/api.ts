@@ -96,12 +96,16 @@ class ApiService {
   }
 
   /**
-   * Fetch eligible stocks
+   * Fetch eligible stocks (manual scan)
+   * This calls POST /api/stocks/scan which actually fetches from market
    */
   async fetchStocks(): Promise<Stock[]> {
     try {
       const response = await this.request<{ success: boolean; stocks: Stock[] }>(
-        '/api/stocks'
+        '/api/stocks/scan',
+        {
+          method: 'POST'
+        }
       );
       return response.stocks || [];
     } catch (error) {
@@ -373,4 +377,3 @@ class ApiService {
 // Export singleton instance
 export const apiService = new ApiService();
 export default apiService;
-
