@@ -60,9 +60,10 @@ class TradingBot:
                 logger.error("Failed to initialize trading bot")
                 return False
             
-            # Start scheduler
-            logger.info("Starting scheduler...")
-            self.scheduler.start()
+            # DON'T start scheduler automatically - only manual execution via API
+            logger.info("Scheduler initialized but NOT started (manual execution only)")
+            logger.info("Use POST /api/run-now to manually trigger the algorithm")
+            # self.scheduler.start()  # DISABLED - no automatic execution
             
             # Start Flask API server (runs in main thread)
             logger.info("Starting Flask API server...")
@@ -75,6 +76,7 @@ class TradingBot:
             logger.info("  GET  /api/status - Get system status")
             logger.info("  GET  /api/top-stocks - Get top N stocks")
             logger.info("  POST /api/run-now - Manually trigger algorithm")
+            logger.info("  POST /api/backtest - Run backtest simulation")
             
             self.running = True
             
