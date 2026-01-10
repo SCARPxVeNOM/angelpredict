@@ -154,7 +154,7 @@ class TradingAPI:
         @self.app.route('/api/orders', methods=['GET'])
         def get_orders():
             """
-            Get order history (includes simulated orders)
+            Get order history (includes simulated orders and backtest orders)
             
             Returns:
                 JSON: Order history
@@ -163,7 +163,7 @@ class TradingAPI:
                 # Get today's orders from allocation tracker
                 today_orders = self.allocation_tracker.get_today_orders()
                 
-                # Also load simulated orders from file
+                # Load simulated orders from file
                 simulated_orders = []
                 if os.path.exists(config.ORDER_HISTORY_FILE):
                     try:
@@ -172,13 +172,46 @@ class TradingAPI:
                     except:
                         pass
                 
-                # Get allocation history (last 7 days)
-                history = self.allocation_tracker.get_allocation_history(days=7)
+                # Load backtest orders from file
+                backtest_orders = []
+                backtest_orders_file = "data/backtest_orders.json"
+                if os.path.exists(backtest_orders_file):
+                    try:
+                        with open(backtest_orders_file, 'r') as f:
+                            backtest_orders = json.load(f)
+                        logger.info(f"Loaded {len(backtest_orders)} backtest orders")
+                    except Exception as e:
+                        logger.warning(f"Error loading backtest orders: {e}")
+                
+                # Combine all orders
+                all_orders = []
+                
+                # Add backtest orders (they have complete data with dates)
+                all_orders.extend(backtest_orders)
+                
+                # Add simulated orders
+                all_orders.extend(simulated_orders)
+                
+                # Add today's orders
+                for order in today_orders:
+                    # Check if not already in simulated orders
+                    order_id = order.get('order_id', '')
+                    if not any(o.get('id') == order_id or o.get('order_id') == order_id for o in all_orders):
+                        all_orders.append(order)
+                
+                # Sort by timestamp (newest first)
+                all_orders.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+                
+                # Get allocation history (last 30 days)
+                history = self.allocation_tracker.get_allocation_history(days=30)
+                
+                logger.info(f"API /api/orders: Returning {len(all_orders)} total orders ({len(backtest_orders)} backtest, {len(simulated_orders)} simulated, {len(today_orders)} today)")
                 
                 return jsonify({
                     'success': True,
                     'today_orders': today_orders,
-                    'simulated_orders': simulated_orders[-50:],  # Last 50 simulated orders
+                    'simulated_orders': all_orders[:100],  # Last 100 orders (includes backtest)
+                    'backtest_orders': backtest_orders,
                     'history': history,
                     'paper_trading': config.PAPER_TRADING
                 })

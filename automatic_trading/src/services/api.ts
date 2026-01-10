@@ -111,7 +111,7 @@ class ApiService {
   }
 
   /**
-   * Fetch order history (includes simulated orders)
+   * Fetch order history (includes simulated orders and backtest orders)
    */
   async fetchOrders(): Promise<Order[]> {
     try {
@@ -119,6 +119,7 @@ class ApiService {
         success: boolean;
         today_orders: any[];
         simulated_orders?: any[];
+        backtest_orders?: any[];
         history: any;
         paper_trading?: boolean;
       }>('/api/orders');
@@ -126,26 +127,51 @@ class ApiService {
       // Transform backend orders to frontend format
       const orders: Order[] = [];
       
-      // Add simulated orders first (they have complete data)
-      if (response.simulated_orders && response.simulated_orders.length > 0) {
-        response.simulated_orders.forEach((order: any) => {
+      // Add backtest orders first (they have complete data with dates)
+      if (response.backtest_orders && response.backtest_orders.length > 0) {
+        response.backtest_orders.forEach((order: any) => {
           orders.push({
-            id: order.id || order.order_id || `ord_${Date.now()}`,
+            id: order.id || order.order_id || `backtest_${Date.now()}`,
             timestamp: order.timestamp || new Date().toISOString(),
             symbol: order.symbol || 'N/A',
             quantity: order.quantity || 0,
             price: order.price || 0,
             amount: order.amount || 0,
-            status: 'simulated',
-            apiResponse: order.apiResponse || 'ORDER_SUCCESS',
+            status: 'simulated',  // Display as simulated in UI
+            apiResponse: `BACKTEST: ${order.date || 'N/A'}`,
           });
+        });
+      }
+      
+      // Add simulated orders (excluding backtest orders already added)
+      if (response.simulated_orders && response.simulated_orders.length > 0) {
+        response.simulated_orders.forEach((order: any) => {
+          // Skip if it's a backtest order (already added above)
+          if (order.status === 'backtest' || (order.id && order.id.startsWith('backtest_'))) {
+            return;
+          }
+          
+          // Skip if already in orders
+          const exists = orders.some(o => o.id === (order.id || order.order_id));
+          if (!exists) {
+            orders.push({
+              id: order.id || order.order_id || `ord_${Date.now()}`,
+              timestamp: order.timestamp || new Date().toISOString(),
+              symbol: order.symbol || 'N/A',
+              quantity: order.quantity || 0,
+              price: order.price || 0,
+              amount: order.amount || 0,
+              status: 'simulated',
+              apiResponse: order.apiResponse || 'ORDER_SUCCESS',
+            });
+          }
         });
       }
       
       // Add today's orders from allocation tracker (if not already in simulated orders)
       if (response.today_orders) {
         response.today_orders.forEach((order: any, index: number) => {
-          // Skip if already in simulated orders
+          // Skip if already in orders
           const exists = orders.some(o => o.id === (order.order_id || `ord_${index + 1}`));
           if (!exists) {
             // Try to calculate quantity from amount if price is available

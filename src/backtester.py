@@ -325,9 +325,64 @@ class Backtester:
                 json.dump(results, f, indent=2, default=str)
             
             logger.info(f"Backtest results saved to {filename}")
+            
+            # Also save to a "latest" file for easy access
+            latest_filename = "data/backtest_results_latest.json"
+            with open(latest_filename, 'w') as f:
+                json.dump(results, f, indent=2, default=str)
+            
+            logger.info(f"Latest backtest results saved to {latest_filename}")
+            
+            # Save backtest orders separately for dashboard display
+            self._save_backtest_orders(results)
+            
             return filename
             
         except Exception as e:
             logger.exception(f"Error saving results: {e}")
             return None
+    
+    def _save_backtest_orders(self, results):
+        """
+        Save backtest orders to a separate file for dashboard display
+        
+        Args:
+            results: Backtest results dictionary
+        """
+        try:
+            orders_file = "data/backtest_orders.json"
+            
+            # Extract all orders from results
+            all_orders = []
+            order_id = 1
+            
+            if 'results' in results:
+                for day_result in results['results']:
+                    if 'orders' in day_result and not day_result.get('error'):
+                        for order in day_result['orders']:
+                            all_orders.append({
+                                'id': f"backtest_{order_id}",
+                                'order_id': f"backtest_{order_id}",
+                                'timestamp': f"{order['date']}T15:30:00",  # Market close time
+                                'date': order['date'],
+                                'symbol': order['symbol'],
+                                'name': order.get('name', order['symbol']),
+                                'quantity': order['quantity'],
+                                'price': order['price'],
+                                'amount': order['amount'],
+                                'status': 'backtest',
+                                'ema': order.get('ema', 0),
+                                'fall_percentage': order.get('fall_percentage', 0)
+                            })
+                            order_id += 1
+            
+            # Save to file
+            with open(orders_file, 'w') as f:
+                json.dump(all_orders, f, indent=2)
+            
+            logger.info(f"Saved {len(all_orders)} backtest orders to {orders_file}")
+            
+        except Exception as e:
+            logger.exception(f"Error saving backtest orders: {e}")
+
 
