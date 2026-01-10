@@ -149,6 +149,14 @@ tradingBOT/
    - Check if market is open
    - Verify symbol tokens are correct
 
+## Deployment
+
+This project can be deployed to:
+- **Frontend**: Vercel (React app in `automatic_trading/`)
+- **Backend**: Render (Flask API)
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions.
+
 ## License
 
 This project is for educational purposes. Use at your own risk.
