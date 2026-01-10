@@ -63,6 +63,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDU8bKCXRpEzvXeLG-mP6dT2Fm2P-
 # Frontend Settings
 FRONTEND_BUILD_PATH = "automatic_trading/dist"
 FRONTEND_INDEX_PATH = f"{FRONTEND_BUILD_PATH}/index.html"
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")  # Vercel frontend URL for CORS
 
 # API Settings
 FLASK_HOST = "0.0.0.0"

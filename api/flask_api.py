@@ -29,7 +29,16 @@ class TradingAPI:
             scheduler: TradingScheduler instance (optional)
         """
         self.app = Flask(__name__)
-        CORS(self.app)  # Enable CORS for frontend
+        # Configure CORS with frontend URL
+        # Allow frontend URL and localhost for development
+        allowed_origins = [
+            config.FRONTEND_URL,
+            "http://localhost:5173",  # Vite dev server
+            "http://localhost:3000",  # Alternative dev port
+        ]
+        # Filter out None values if FRONTEND_URL is not set
+        allowed_origins = [origin for origin in allowed_origins if origin]
+        CORS(self.app, origins=allowed_origins, supports_credentials=True)
         
         self.client = angelone_client
         self.scheduler = scheduler

@@ -107,3 +107,5 @@ class Nifty50Fetcher:
         """
         return [company.get('symbol') for company in self.companies if company.get('symbol')]
 
+
+

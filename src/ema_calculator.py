@@ -18,10 +18,31 @@ class EMACalculator:
         Initialize EMA calculator
         
         Args:
-            angelone_client: AngelOneClient instance
+            angelone_client: AngelOneClient instance (can be TRADING, HISTORICAL, or MARKET type)
         """
         self.client = angelone_client
         self.ema_period = config.EMA_PERIOD
+        # Try to use HISTORICAL client for better historical data access
+        # If the passed client is already HISTORICAL type, use it; otherwise create a new one
+        if angelone_client.api_type != 'HISTORICAL':
+            try:
+                from src.angelone_client import AngelOneClient
+                self.historical_client = AngelOneClient(api_type='HISTORICAL')
+                # Authenticate historical client
+                if not self.historical_client.authenticated:
+                    if self.historical_client.authenticate():
+                        logger.info("HISTORICAL API client authenticated successfully")
+                        self.client = self.historical_client
+                    else:
+                        logger.warning("Failed to authenticate HISTORICAL client, falling back to provided client")
+                        self.historical_client = None
+                else:
+                    self.client = self.historical_client
+            except Exception as e:
+                logger.warning(f"Could not create HISTORICAL client, using provided client: {e}")
+                self.historical_client = None
+        else:
+            self.historical_client = None
     
     def calculate_ema(self, prices):
         """
@@ -51,14 +72,15 @@ class EMACalculator:
             logger.exception(f"Error calculating EMA: {e}")
             return None
     
-    def get_ema_for_symbol(self, symbol_token, exchange, hours_back=25):
+    def get_ema_for_symbol(self, symbol_token, exchange, days_back=30):
         """
         Get EMA and current price for a symbol
         
         Args:
             symbol_token: Symbol token ID
             exchange: Exchange (NSE, BSE)
-            hours_back: Number of hours of historical data to fetch (default: 25 to ensure 20+ data points)
+            days_back: Number of days of historical data to fetch (default: 30 to ensure enough data)
+                      Market is open ~6.5 hours/day, so 30 days = ~195 hourly candles (more than enough)
         
         Returns:
             dict: {
@@ -69,15 +91,22 @@ class EMACalculator:
             }
         """
         try:
-            # Calculate date range
+            # Calculate date range - fetch more days to account for weekends/holidays
+            # Market hours: 9:15 AM to 3:30 PM IST (~6.5 hours/day)
+            # Using 30 days ensures we have enough data even with weekends/holidays
+            # This gives us ~195 trading hours (30 days * 6.5 hours) which is more than enough
             to_date = datetime.now()
-            from_date = to_date - timedelta(hours=hours_back)
+            from_date = to_date - timedelta(days=days_back)
             
             # Format dates for API
+            # Set from_date to market open time (9:15 AM) to ensure we capture full trading day
+            from_date = from_date.replace(hour=9, minute=15, second=0, microsecond=0)
             from_date_str = from_date.strftime("%Y-%m-%d %H:%M")
             to_date_str = to_date.strftime("%Y-%m-%d %H:%M")
             
-            # Fetch historical data
+            logger.debug(f"Fetching historical data for token {symbol_token}: {from_date_str} to {to_date_str}")
+            
+            # Fetch historical data with the configured timeframe
             historical_data = self.client.get_historical_data(
                 symbol_token=symbol_token,
                 exchange=exchange,
@@ -87,43 +116,144 @@ class EMACalculator:
             )
             
             if not historical_data:
-                logger.warning(f"No historical data for token {symbol_token}")
-                return {
-                    'ema': None,
-                    'current_price': None,
-                    'data_points': 0,
-                    'success': False
-                }
+                logger.warning(f"No historical data for token {symbol_token} using {config.EMA_TIMEFRAME} timeframe")
+                # Try fallback to daily candles if hourly doesn't work
+                if config.EMA_TIMEFRAME != "ONE_DAY":
+                    logger.info(f"Attempting fallback to ONE_DAY timeframe for token {symbol_token}")
+                    historical_data = self.client.get_historical_data(
+                        symbol_token=symbol_token,
+                        exchange=exchange,
+                        interval="ONE_DAY",
+                        from_date=from_date_str,
+                        to_date=to_date_str
+                    )
+                    
+                    if historical_data and len(historical_data) >= self.ema_period:
+                        logger.info(f"Successfully fetched {len(historical_data)} daily candles for token {symbol_token}")
+                    else:
+                        logger.warning(f"Fallback to ONE_DAY also failed for token {symbol_token}")
+                        return {
+                            'ema': None,
+                            'current_price': None,
+                            'data_points': 0 if not historical_data else len(historical_data),
+                            'success': False
+                        }
+                else:
+                    return {
+                        'ema': None,
+                        'current_price': None,
+                        'data_points': 0,
+                        'success': False
+                    }
             
             # Parse candle data
             # Format: [timestamp, open, high, low, close, volume]
             closing_prices = []
             current_price = None
             
+            logger.debug(f"Received {len(historical_data)} candles for token {symbol_token}")
+            
             for candle in historical_data:
                 if isinstance(candle, list) and len(candle) >= 5:
                     # Candle format: [timestamp, open, high, low, close, volume]
-                    close_price = float(candle[4])  # Close price at index 4
-                    closing_prices.append(close_price)
-                    current_price = close_price  # Last candle's close is current price
+                    try:
+                        close_price = float(candle[4])  # Close price at index 4
+                        closing_prices.append(close_price)
+                        current_price = close_price  # Last candle's close is current price
+                    except (ValueError, IndexError, TypeError) as e:
+                        logger.warning(f"Error parsing candle data: {candle}, error: {e}")
+                        continue
                 elif isinstance(candle, dict):
                     # If data is in dict format
-                    if 'close' in candle:
-                        close_price = float(candle['close'])
-                        closing_prices.append(close_price)
-                        current_price = close_price
+                    try:
+                        if 'close' in candle:
+                            close_price = float(candle['close'])
+                            closing_prices.append(close_price)
+                            current_price = close_price
+                    except (ValueError, TypeError) as e:
+                        logger.warning(f"Error parsing candle dict: {candle}, error: {e}")
+                        continue
+                else:
+                    logger.warning(f"Unexpected candle format: {type(candle)}, value: {candle}")
             
+            logger.debug(f"Parsed {len(closing_prices)} closing prices for token {symbol_token}")
+            
+            # If we don't have enough data points, try fallback to daily candles
             if len(closing_prices) < self.ema_period:
                 logger.warning(
                     f"Insufficient data points for token {symbol_token}: "
-                    f"{len(closing_prices)} < {self.ema_period}"
+                    f"{len(closing_prices)} < {self.ema_period} using {config.EMA_TIMEFRAME} timeframe. "
+                    f"Date range: {from_date_str} to {to_date_str}. "
+                    f"Attempting fallback to ONE_DAY timeframe."
                 )
-                return {
-                    'ema': None,
-                    'current_price': current_price,
-                    'data_points': len(closing_prices),
-                    'success': False
-                }
+                
+                # Try fallback to daily candles if we're using hourly
+                if config.EMA_TIMEFRAME != "ONE_DAY":
+                    logger.info(f"Attempting fallback to ONE_DAY timeframe for token {symbol_token}")
+                    daily_data = self.client.get_historical_data(
+                        symbol_token=symbol_token,
+                        exchange=exchange,
+                        interval="ONE_DAY",
+                        from_date=from_date_str,
+                        to_date=to_date_str
+                    )
+                    
+                    if daily_data and len(daily_data) >= self.ema_period:
+                        logger.info(f"Successfully fetched {len(daily_data)} daily candles for token {symbol_token}")
+                        # Parse daily candles
+                        closing_prices = []
+                        for candle in daily_data:
+                            if isinstance(candle, list) and len(candle) >= 5:
+                                try:
+                                    close_price = float(candle[4])
+                                    closing_prices.append(close_price)
+                                    current_price = close_price
+                                except (ValueError, IndexError, TypeError):
+                                    continue
+                            elif isinstance(candle, dict) and 'close' in candle:
+                                try:
+                                    close_price = float(candle['close'])
+                                    closing_prices.append(close_price)
+                                    current_price = close_price
+                                except (ValueError, TypeError):
+                                    continue
+                        
+                        # Check again after parsing daily candles
+                        if len(closing_prices) < self.ema_period:
+                            logger.warning(
+                                f"Insufficient daily candles for token {symbol_token}: "
+                                f"{len(closing_prices)} < {self.ema_period}"
+                            )
+                            return {
+                                'ema': None,
+                                'current_price': current_price,
+                                'data_points': len(closing_prices),
+                                'success': False
+                            }
+                    else:
+                        logger.warning(
+                            f"Fallback to ONE_DAY also insufficient for token {symbol_token}: "
+                            f"{len(daily_data) if daily_data else 0} candles received"
+                        )
+                        return {
+                            'ema': None,
+                            'current_price': current_price if 'current_price' in locals() else None,
+                            'data_points': len(closing_prices),
+                            'success': False
+                        }
+                else:
+                    # Already using daily candles, no fallback available
+                    return {
+                        'ema': None,
+                        'current_price': current_price,
+                        'data_points': len(closing_prices),
+                        'success': False
+                    }
+            
+            logger.debug(
+                f"Token {symbol_token}: Received {len(closing_prices)} data points "
+                f"(need {self.ema_period} for EMA calculation)"
+            )
             
             # Calculate EMA
             ema_value = self.calculate_ema(closing_prices)
@@ -174,4 +304,6 @@ class EMACalculator:
         except Exception as e:
             logger.exception(f"Error calculating percentage: {e}")
             return None
+
+
 

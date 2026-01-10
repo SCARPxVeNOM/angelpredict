@@ -31,7 +31,7 @@ This guide covers deploying the Trading Bot frontend to Vercel and backend to Re
 3. **Environment Variables**
    Add these in Vercel project settings:
    ```
-   VITE_API_BASE_URL=https://your-backend-url.onrender.com
+   VITE_API_BASE_URL=https://angelpredict.onrender.com
    ```
 
 4. **Deploy**
@@ -89,11 +89,13 @@ This guide covers deploying the Trading Bot frontend to Vercel and backend to Re
    FLASK_HOST=0.0.0.0
    FLASK_PORT=10000
    FLASK_DEBUG=false
+   FRONTEND_URL=https://angelpredict.vercel.app
    ```
 
    **Important**: 
    - Render uses port `10000` by default, but check your service settings
    - Set `FLASK_DEBUG=false` for production
+   - Set `FRONTEND_URL` to your Vercel frontend URL for CORS configuration
    - Never commit `.env` file to Git
 
 4. **Advanced Settings**
@@ -112,7 +114,7 @@ After backend is deployed:
 1. Go to Vercel project settings
 2. Update environment variable:
    ```
-   VITE_API_BASE_URL=https://your-backend-url.onrender.com
+   VITE_API_BASE_URL=https://angelpredict.onrender.com
    ```
 3. Redeploy frontend (or wait for auto-deploy)
 
@@ -175,6 +177,7 @@ ANGELONE_CLIENT_ID
 FLASK_HOST
 FLASK_PORT
 FLASK_DEBUG
+FRONTEND_URL
 ```
 
 ### Frontend (Vercel)
@@ -219,4 +222,6 @@ For issues:
 2. Review error messages
 3. Verify environment variables
 4. Check GitHub issues
+
+
 

@@ -182,3 +182,5 @@ class StockAnalyzer:
             logger.exception(f"Error analyzing {symbol}: {e}")
             return None
 
+
+

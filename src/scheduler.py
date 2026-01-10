@@ -188,3 +188,5 @@ class TradingScheduler:
             'next_run_time': self.scheduler.get_job('daily_trading_algorithm').next_run_time.isoformat() if self.scheduler and self.scheduler.get_job('daily_trading_algorithm') else None
         }
 
+
+
