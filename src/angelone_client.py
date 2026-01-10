@@ -293,6 +293,106 @@ class AngelOneClient:
             logger.exception(f"Error fetching market data for {symbol_token}: {e}")
             return None
     
+    def get_ltp(self, exchange, symbol, token):
+        """
+        Get Last Traded Price (LTP) for a symbol
+        
+        Args:
+            exchange: Exchange (NSE, BSE, etc.)
+            symbol: Trading symbol
+            token: Symbol token ID
+        
+        Returns:
+            dict: LTP data with 'ltp' key or None if error
+        """
+        try:
+            # Lazy authentication
+            if not self.authenticated:
+                logger.info("Not authenticated. Attempting authentication before API call...")
+                if not self.authenticate():
+                    logger.error("Authentication failed. Cannot make API call.")
+                    return None
+            
+            # Check cache first
+            cache_key = f"ltp_{exchange}_{token}"
+            cached_data = self.cache.get(cache_key)
+            if cached_data is not None:
+                logger.debug(f"Cache hit for {cache_key}")
+                return cached_data
+            
+            # Rate limit
+            self.rate_limiter.acquire()
+            
+            # Use getLTP method from SmartAPI
+            ltp_data = self.smart_api.ltpData(exchange, symbol, token)
+            
+            if ltp_data and 'data' in ltp_data:
+                result = {'ltp': ltp_data['data'].get('ltp', 0)}
+                # Cache the result
+                self.cache.set(cache_key, result)
+                return result
+            
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Error fetching LTP for {symbol}: {e}")
+            return None
+    
+    def get_quote(self, exchange, symbol, token):
+        """
+        Get full quote data for a symbol
+        
+        Args:
+            exchange: Exchange (NSE, BSE, etc.)
+            symbol: Trading symbol
+            token: Symbol token ID
+        
+        Returns:
+            dict: Quote data or None if error
+        """
+        try:
+            # Lazy authentication
+            if not self.authenticated:
+                logger.info("Not authenticated. Attempting authentication before API call...")
+                if not self.authenticate():
+                    logger.error("Authentication failed. Cannot make API call.")
+                    return None
+            
+            # Check cache first
+            cache_key = f"quote_{exchange}_{token}"
+            cached_data = self.cache.get(cache_key)
+            if cached_data is not None:
+                logger.debug(f"Cache hit for {cache_key}")
+                return cached_data
+            
+            # Rate limit
+            self.rate_limiter.acquire()
+            
+            # Use getMarketData method from SmartAPI
+            quote_data = self.smart_api.getMarketData("FULL", [{"exchangeSegment": exchange, "exchangeInstrumentToken": token}])
+            
+            if quote_data and 'data' in quote_data and 'fetched' in quote_data['data']:
+                data = quote_data['data']['fetched'][0] if quote_data['data']['fetched'] else {}
+                result = {
+                    'ltp': data.get('ltp', 0),
+                    'open': data.get('open', 0),
+                    'high': data.get('high', 0),
+                    'low': data.get('low', 0),
+                    'close': data.get('close', 0),
+                    'change': data.get('netChange', 0),
+                    'pChange': data.get('percentChange', 0),
+                    'volume': data.get('volume', 0),
+                }
+                # Cache the result
+                self.cache.set(cache_key, result)
+                return result
+            
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Error fetching quote for {symbol}: {e}")
+            return None
+    
     def place_order(self, order_params):
         """
         Place a buy/sell order

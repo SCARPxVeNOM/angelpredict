@@ -753,6 +753,98 @@ class TradingAPI:
                     'error': f"Failed to load backtest results: {str(e)}",
                     'results': None
                 }), 500
+        
+        @self.app.route('/api/nifty50/realtime', methods=['POST'])
+        def get_nifty50_realtime():
+            """
+            Fetch real-time data for all Nifty 50 stocks from AngelOne API
+            
+            Returns:
+                JSON: Real-time data for all Nifty 50 stocks
+            """
+            try:
+                logger.info("API /api/nifty50/realtime: Fetching real-time Nifty 50 data")
+                
+                # Get all Nifty 50 companies
+                companies = self.nifty50_fetcher.get_all_companies()
+                
+                stocks_data = []
+                
+                for company in companies:
+                    symbol = company.get('symbol')
+                    name = company.get('name')
+                    token = company.get('token')
+                    exchange = company.get('exchange', 'NSE')
+                    
+                    try:
+                        # Get LTP (Last Traded Price) from AngelOne
+                        ltp_data = self.client.get_ltp(exchange, symbol, token)
+                        
+                        if ltp_data and 'ltp' in ltp_data:
+                            ltp = float(ltp_data['ltp'])
+                            
+                            # Get additional quote data if available
+                            quote_data = self.client.get_quote(exchange, symbol, token)
+                            
+                            if quote_data:
+                                stock_info = {
+                                    'id': token,
+                                    'symbol': symbol,
+                                    'name': name,
+                                    'sector': company.get('sector', 'N/A'),
+                                    'price': ltp,
+                                    'change': float(quote_data.get('change', 0)),
+                                    'changePercent': float(quote_data.get('pChange', 0)),
+                                    'dayHigh': float(quote_data.get('high', ltp)),
+                                    'dayLow': float(quote_data.get('low', ltp)),
+                                    'open': float(quote_data.get('open', ltp)),
+                                    'previousClose': float(quote_data.get('close', ltp)),
+                                    'volume': int(quote_data.get('volume', 0)),
+                                    'marketCap': 0,  # Not available from AngelOne API
+                                    'pe': 0,  # Not available from AngelOne API
+                                }
+                            else:
+                                # Fallback if quote data not available
+                                stock_info = {
+                                    'id': token,
+                                    'symbol': symbol,
+                                    'name': name,
+                                    'sector': company.get('sector', 'N/A'),
+                                    'price': ltp,
+                                    'change': 0,
+                                    'changePercent': 0,
+                                    'dayHigh': ltp,
+                                    'dayLow': ltp,
+                                    'open': ltp,
+                                    'previousClose': ltp,
+                                    'volume': 0,
+                                    'marketCap': 0,
+                                    'pe': 0,
+                                }
+                            
+                            stocks_data.append(stock_info)
+                            logger.debug(f"Fetched data for {symbol}: ₹{ltp}")
+                        
+                    except Exception as e:
+                        logger.warning(f"Error fetching data for {symbol}: {e}")
+                        continue
+                
+                logger.info(f"API /api/nifty50/realtime: Successfully fetched data for {len(stocks_data)}/{len(companies)} stocks")
+                
+                return jsonify({
+                    'success': True,
+                    'count': len(stocks_data),
+                    'stocks': stocks_data,
+                    'timestamp': datetime.now().isoformat()
+                })
+                
+            except Exception as e:
+                logger.exception(f"Error fetching Nifty 50 real-time data: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': str(e),
+                    'stocks': []
+                }), 500
     
     def _register_static_routes(self):
         """Register routes for serving static frontend files"""

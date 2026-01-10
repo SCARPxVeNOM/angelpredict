@@ -382,6 +382,33 @@ class ApiService {
       throw new Error(errorMessage);
     }
   }
+
+  /**
+   * Fetch real-time Nifty 50 data from AngelOne API
+   */
+  async fetchNifty50RealTime(): Promise<any[]> {
+    try {
+      const response = await this.request<{
+        success: boolean;
+        stocks: any[];
+        count: number;
+        timestamp: string;
+        error?: string;
+      }>('/api/nifty50/realtime', {
+        method: 'POST'
+      });
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to fetch Nifty 50 data');
+      }
+      
+      return response.stocks || [];
+    } catch (error: any) {
+      console.error('Error fetching Nifty 50 real-time data:', error);
+      const errorMessage = error?.message || error?.error || 'Failed to fetch Nifty 50 data from AngelOne API.';
+      throw new Error(errorMessage);
+    }
+  }
 }
 
 // Export singleton instance

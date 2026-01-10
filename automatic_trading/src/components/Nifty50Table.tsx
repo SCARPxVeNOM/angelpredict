@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { TrendingUp, TrendingDown, Search, ArrowUpDown, Filter } from 'lucide-react'
+import { TrendingUp, TrendingDown, Search, ArrowUpDown, Filter, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { nifty50Stocks, type Nifty50Stock } from '../data/nifty50Data'
 import { formatCurrency } from '../utils/formatters'
+import apiService from '../services/api'
 
 const Nifty50Table = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -11,12 +12,51 @@ const Nifty50Table = () => {
     key: 'symbol',
     direction: 'asc'
   })
+  const [stocks, setStocks] = useState<Nifty50Stock[]>(nifty50Stocks)
+  const [loading, setLoading] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null)
+
+  // Fetch real-time data from AngelOne API
+  const fetchRealTimeData = async () => {
+    setLoading(true)
+    try {
+      const realTimeData = await apiService.fetchNifty50RealTime()
+      
+      if (realTimeData && realTimeData.length > 0) {
+        // Map the API data to our stock format
+        const updatedStocks = realTimeData.map((stock: any) => ({
+          id: stock.id || stock.symbol,
+          symbol: stock.symbol,
+          name: stock.name,
+          sector: stock.sector || 'N/A',
+          price: stock.price || 0,
+          change: stock.change || 0,
+          changePercent: stock.changePercent || 0,
+          dayHigh: stock.dayHigh || stock.price || 0,
+          dayLow: stock.dayLow || stock.price || 0,
+          open: stock.open || stock.price || 0,
+          previousClose: stock.previousClose || stock.price || 0,
+          volume: stock.volume || 0,
+          marketCap: stock.marketCap || 0,
+          pe: stock.pe || 0,
+        }))
+        
+        setStocks(updatedStocks)
+        setLastUpdated(new Date().toLocaleTimeString())
+      }
+    } catch (error) {
+      console.error('Error fetching real-time data:', error)
+      alert('Failed to fetch real-time data. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Get unique sectors
-  const sectors = ['all', ...Array.from(new Set(nifty50Stocks.map(stock => stock.sector)))]
+  const sectors = ['all', ...Array.from(new Set(stocks.map(stock => stock.sector)))]
 
   // Filter and sort stocks
-  const filteredStocks = nifty50Stocks
+  const filteredStocks = stocks
     .filter(stock => {
       const matchesSearch = stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            stock.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -64,13 +104,26 @@ const Nifty50Table = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-100">Nifty 50 Companies</h1>
-          <p className="text-sm text-gray-500 mt-1">Real-time market data for India's top 50 companies</p>
+          <p className="text-sm text-gray-500 mt-1">
+            Real-time market data for India's top 50 companies
+            {lastUpdated && <span className="ml-2 text-accent-primary">• Updated: {lastUpdated}</span>}
+          </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-elevated border border-dark-border">
-          <TrendingUp className="w-4 h-4 text-accent-success" />
-          <span className="text-sm text-gray-400">Nifty 50: </span>
-          <span className="text-sm font-bold text-accent-success font-mono">21,456.75</span>
-          <span className="text-xs text-accent-success font-mono">+0.85%</span>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchRealTimeData}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-primary hover:bg-accent-primary/80 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold transition-all"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Fetching...' : 'Fetch Data'}
+          </button>
+          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-elevated border border-dark-border">
+            <TrendingUp className="w-4 h-4 text-accent-success" />
+            <span className="text-sm text-gray-400">Nifty 50: </span>
+            <span className="text-sm font-bold text-accent-success font-mono">21,456.75</span>
+            <span className="text-xs text-accent-success font-mono">+0.85%</span>
+          </div>
         </div>
       </div>
 
@@ -108,7 +161,7 @@ const Nifty50Table = () => {
           {/* Results count */}
           <div className="px-4 py-2.5 rounded-lg bg-dark-elevated border border-dark-border">
             <span className="text-sm font-semibold text-gray-300 font-mono">
-              {filteredStocks.length} / {nifty50Stocks.length}
+              {filteredStocks.length} / {stocks.length}
             </span>
           </div>
         </div>
