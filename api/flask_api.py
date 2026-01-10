@@ -335,6 +335,11 @@ class TradingAPI:
                 
                 logger.info(f"API /api/stocks: Returning {len(stocks)} stocks to frontend")
                 
+                if len(stocks) == 0:
+                    logger.warning("API /api/stocks: No eligible stocks found (empty array being returned)")
+                else:
+                    logger.info(f"API /api/stocks: Eligible stocks: {[s['symbol'] for s in stocks]}")
+                
                 return jsonify({
                     'success': True,
                     'stocks': stocks
