@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Terminal, Info, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
-import { apiService, LogEntry } from '../services/api'
+import { LogEntry } from '../services/api'
 
 const LogsPanel = () => {
-  const [logs, setLogs] = useState<LogEntry[]>([])
-  const [loading, setLoading] = useState(true)
+  const [logs] = useState<LogEntry[]>([])
+  const [loading] = useState(true)
 
   // Don't auto-fetch logs - only load manually
   // Remove automatic fetching to prevent unnecessary API calls

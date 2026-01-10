@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { Clock, CheckCircle, XCircle, Sparkles } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
 import { useAI } from '../contexts/AIContext'
-import { apiService, Order } from '../services/api'
+import { Order } from '../services/api'
 
 const OrdersPanel = () => {
   const { openDrawer } = useAI()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
+  const [orders] = useState<Order[]>([])
+  const [loading] = useState(true)
 
   // Don't auto-fetch orders - only load from backtest or manual trigger
   // Remove automatic fetching to prevent unnecessary API calls

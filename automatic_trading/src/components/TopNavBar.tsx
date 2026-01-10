@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { TrendingUp, Circle, User } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
-import { apiService, CapitalInfo } from '../services/api'
+import { CapitalInfo } from '../services/api'
 
 const TopNavBar = () => {
-  const [capital, setCapital] = useState<CapitalInfo>({
+  const [capital] = useState<CapitalInfo>({
     total: 300000,
     deployed: 0,
     available: 300000,
     scanCount: 0
   })
-  const [lastScanTime, setLastScanTime] = useState<string>('15:45:33')
+  const [lastScanTime] = useState<string>('15:45:33')
 
   // Don't auto-fetch - only load from backtest or manual trigger
   // Remove automatic fetching to prevent unnecessary API calls

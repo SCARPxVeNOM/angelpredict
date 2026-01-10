@@ -3,11 +3,11 @@ import { TrendingUp, Wallet, DollarSign, Activity, Sparkles } from 'lucide-react
 import { formatCurrency } from '../utils/formatters'
 import { motion } from 'framer-motion'
 import { useAI } from '../contexts/AIContext'
-import { apiService, CapitalInfo } from '../services/api'
+import { CapitalInfo } from '../services/api'
 
 const CapitalOverview = () => {
   const { openDrawer } = useAI()
-  const [capital, setCapital] = useState<CapitalInfo>({
+  const [capital] = useState<CapitalInfo>({
     total: 300000,
     deployed: 0,
     available: 300000,
