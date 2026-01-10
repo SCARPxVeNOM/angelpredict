@@ -1,8 +1,56 @@
+import { useState, useEffect } from 'react'
 import { TrendingUp, Circle, User } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
+import { apiService, CapitalInfo } from '../services/api'
 
 const TopNavBar = () => {
-  const lastScanTime = '15:45:33'
+  const [capital, setCapital] = useState<CapitalInfo>({
+    total: 300000,
+    deployed: 0,
+    available: 300000,
+    scanCount: 0
+  })
+  const [lastScanTime, setLastScanTime] = useState<string>('15:45:33')
+
+  useEffect(() => {
+    const fetchCapital = async () => {
+      try {
+        const data = await apiService.fetchCapital()
+        setCapital(data)
+      } catch (error) {
+        console.error('Error fetching capital:', error)
+      }
+    }
+
+    const fetchStatus = async () => {
+      try {
+        const status = await apiService.getStatus()
+        if (status.last_execution) {
+          const date = new Date(status.last_execution)
+          const timeStr = date.toLocaleTimeString('en-IN', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+          })
+          setLastScanTime(timeStr)
+        }
+      } catch (error) {
+        console.error('Error fetching status:', error)
+      }
+    }
+
+    fetchCapital()
+    fetchStatus()
+    // Refresh every 10 seconds
+    const capitalInterval = setInterval(fetchCapital, 10000)
+    const statusInterval = setInterval(fetchStatus, 10000)
+    
+    return () => {
+      clearInterval(capitalInterval)
+      clearInterval(statusInterval)
+    }
+  }, [])
+
   const currentDate = new Date().toLocaleDateString('en-IN', { 
     day: '2-digit', 
     month: 'short', 
@@ -41,12 +89,12 @@ const TopNavBar = () => {
           <div className="flex items-center gap-4 px-4 py-2 rounded-lg bg-dark-elevated/80 border border-dark-border">
             <div>
               <p className="text-xs text-gray-500 font-medium">Total Capital</p>
-              <p className="text-sm font-mono font-bold text-accent-primary">{formatCurrency(300000)}</p>
+              <p className="text-sm font-mono font-bold text-accent-primary">{formatCurrency(capital.total)}</p>
             </div>
             <div className="w-px h-8 bg-dark-border" />
             <div>
               <p className="text-xs text-gray-500 font-medium">Available</p>
-              <p className="text-sm font-mono font-bold text-accent-success">{formatCurrency(225783.45)}</p>
+              <p className="text-sm font-mono font-bold text-accent-success">{formatCurrency(capital.available)}</p>
             </div>
           </div>
 
