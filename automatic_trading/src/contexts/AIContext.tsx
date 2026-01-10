@@ -45,7 +45,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
             current_price: s.lastClose,
             ema: s.previousClose, // Approximation
             fall_percentage: s.dropPercent
-          }))
+          } as any)) // Type assertion for API compatibility
         }
         if (context.orders) {
           apiContext.orders = context.orders.map(o => ({
@@ -53,13 +53,14 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
             quantity: o.quantity,
             price: o.price,
             amount: o.amount
-          }))
+          } as any)) // Type assertion for API compatibility
         }
         if (context.capital) {
           apiContext.capital = {
             total: context.capital.total,
             deployed: context.capital.deployed,
-            available: context.capital.available
+            available: context.capital.available,
+            scanCount: context.capital.scanCount || 0
           }
         }
         if (context.stock_context) {

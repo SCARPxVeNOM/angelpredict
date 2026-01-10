@@ -1,3 +1,5 @@
+import type { Stock, Order, CapitalInfo } from './index'
+
 export interface AIMessage {
   id: string
   role: 'user' | 'assistant'
@@ -10,6 +12,16 @@ export interface AIMessage {
     rank?: number
     quantity?: number
     price?: number
+    stocks?: Stock[]
+    orders?: Order[]
+    capital?: CapitalInfo
+    stock_context?: {
+      symbol: string
+      name?: string
+      current_price?: number
+      ema?: number
+      fall_percentage?: number
+    }
   }
 }
 

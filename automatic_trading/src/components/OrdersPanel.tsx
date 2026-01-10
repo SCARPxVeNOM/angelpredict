@@ -83,7 +83,7 @@ const OrdersPanel = () => {
                 <div className="w-10 h-10 rounded-lg bg-dark-surface border border-dark-border flex items-center justify-center">
                   {getStatusIcon(order.status)}
                 </div>
-                {index < mockOrders.length - 1 && (
+                {index < orders.length - 1 && (
                   <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-8 bg-dark-border" />
                 )}
               </div>

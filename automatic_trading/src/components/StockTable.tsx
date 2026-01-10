@@ -9,7 +9,6 @@ import { apiService } from '../services/api'
 
 const StockTable = () => {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
-  const [sortField, setSortField] = useState<keyof Stock>('rank')
   const [stocks, setStocks] = useState<Stock[]>([])
   const [loading, setLoading] = useState(true)
   const { openDrawer } = useAI()
