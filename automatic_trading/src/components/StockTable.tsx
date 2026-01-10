@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ArrowUpDown, TrendingDown, ChevronRight, Sparkles } from 'lucide-react'
 import { formatCurrency, formatPercent } from '../utils/formatters'
 import StockDetailDrawer from './StockDetailDrawer'
@@ -10,27 +10,23 @@ import { apiService } from '../services/api'
 const StockTable = () => {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   const [stocks, setStocks] = useState<Stock[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const { openDrawer } = useAI()
 
-  useEffect(() => {
-    const fetchStocks = async () => {
-      try {
-        setLoading(true)
-        const data = await apiService.fetchStocks()
-        setStocks(data)
-      } catch (error) {
-        console.error('Error fetching stocks:', error)
-      } finally {
-        setLoading(false)
-      }
+  // Don't auto-fetch stocks - only load from manual trigger or backtest
+  // Remove automatic fetching to prevent unnecessary API calls
+  
+  const fetchStocks = async () => {
+    try {
+      setLoading(true)
+      const data = await apiService.fetchStocks()
+      setStocks(data)
+    } catch (error) {
+      console.error('Error fetching stocks:', error)
+    } finally {
+      setLoading(false)
     }
-
-    fetchStocks()
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchStocks, 30000)
-    return () => clearInterval(interval)
-  }, [])
+  }
 
   const getStatusBadge = (status: string) => {
     const styles = {
@@ -75,9 +71,21 @@ const StockTable = () => {
                 <p className="text-xs text-gray-500 font-medium">Top 5 stocks with ≤ −5% drop • Click row for details</p>
               </div>
             </div>
-            <div className="px-3 py-1.5 rounded-lg bg-dark-surface border border-dark-border">
-              <span className="text-xs text-gray-500 font-medium">Total: </span>
-              <span className="text-xs font-bold text-accent-primary">{stocks.length} stocks</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={fetchStocks}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg bg-accent-primary/10 border border-accent-primary/30 hover:bg-accent-primary/20 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 text-accent-primary" />
+                <span className="text-sm font-semibold text-accent-primary">
+                  {loading ? 'Scanning...' : 'Scan Now'}
+                </span>
+              </button>
+              <div className="px-3 py-1.5 rounded-lg bg-dark-surface border border-dark-border">
+                <span className="text-xs text-gray-500 font-medium">Total: </span>
+                <span className="text-xs font-bold text-accent-primary">{stocks.length} stocks</span>
+              </div>
             </div>
           </div>
         </div>
@@ -109,13 +117,16 @@ const StockTable = () => {
               {loading ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
-                    Loading stocks...
+                    Scanning stocks...
                   </td>
                 </tr>
               ) : stocks.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-8 text-center text-gray-500">
-                    No eligible stocks found
+                    <div className="flex flex-col items-center gap-2">
+                      <p>No stocks loaded</p>
+                      <p className="text-xs">Click "Scan Now" to find eligible stocks</p>
+                    </div>
                   </td>
                 </tr>
               ) : (

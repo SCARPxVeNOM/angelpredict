@@ -22,10 +22,8 @@ const OrdersPanel = () => {
       }
     }
 
+    // Only fetch once on mount, no auto-refresh
     fetchOrders()
-    // Refresh every 15 seconds
-    const interval = setInterval(fetchOrders, 15000)
-    return () => clearInterval(interval)
   }, [])
 
   const handleSummarize = () => {

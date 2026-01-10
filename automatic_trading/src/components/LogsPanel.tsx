@@ -19,10 +19,8 @@ const LogsPanel = () => {
       }
     }
 
+    // Only fetch once on mount, no auto-refresh
     fetchLogs()
-    // Refresh every 5 seconds
-    const interval = setInterval(fetchLogs, 5000)
-    return () => clearInterval(interval)
   }, [])
 
   const getLogIcon = (severity: string) => {
