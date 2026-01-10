@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Terminal, Info, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
 import { apiService, LogEntry } from '../services/api'
 
@@ -6,22 +6,8 @@ const LogsPanel = () => {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        setLoading(true)
-        const data = await apiService.fetchLogs()
-        setLogs(data)
-      } catch (error) {
-        console.error('Error fetching logs:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    // Only fetch once on mount, no auto-refresh
-    fetchLogs()
-  }, [])
+  // Don't auto-fetch logs - only load manually
+  // Remove automatic fetching to prevent unnecessary API calls
 
   const getLogIcon = (severity: string) => {
     switch (severity) {

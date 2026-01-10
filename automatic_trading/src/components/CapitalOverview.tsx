@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { TrendingUp, Wallet, DollarSign, Activity, Sparkles } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
 import { motion } from 'framer-motion'
@@ -14,21 +14,8 @@ const CapitalOverview = () => {
     scanCount: 0
   })
 
-  useEffect(() => {
-    const fetchCapital = async () => {
-      try {
-        const data = await apiService.fetchCapital()
-        setCapital(data)
-      } catch (error) {
-        console.error('Error fetching capital:', error)
-      }
-    }
-
-    fetchCapital()
-    // Refresh every 10 seconds
-    const interval = setInterval(fetchCapital, 10000)
-    return () => clearInterval(interval)
-  }, [])
+  // Don't auto-fetch capital - only load from backtest or manual trigger
+  // Remove automatic fetching to prevent unnecessary API calls
 
   const handleExplainClick = () => {
     openDrawer('Explain capital allocation', { capital })

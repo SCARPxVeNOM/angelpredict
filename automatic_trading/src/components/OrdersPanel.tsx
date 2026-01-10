@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Clock, CheckCircle, XCircle, Sparkles } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
 import { useAI } from '../contexts/AIContext'
@@ -9,22 +9,8 @@ const OrdersPanel = () => {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true)
-        const data = await apiService.fetchOrders()
-        setOrders(data)
-      } catch (error) {
-        console.error('Error fetching orders:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    // Only fetch once on mount, no auto-refresh
-    fetchOrders()
-  }, [])
+  // Don't auto-fetch orders - only load from backtest or manual trigger
+  // Remove automatic fetching to prevent unnecessary API calls
 
   const handleSummarize = () => {
     openDrawer('Summarize today\'s trades', { orders })

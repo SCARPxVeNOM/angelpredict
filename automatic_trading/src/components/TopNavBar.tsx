@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { TrendingUp, Circle, User } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
 import { apiService, CapitalInfo } from '../services/api'
@@ -12,44 +12,8 @@ const TopNavBar = () => {
   })
   const [lastScanTime, setLastScanTime] = useState<string>('15:45:33')
 
-  useEffect(() => {
-    const fetchCapital = async () => {
-      try {
-        const data = await apiService.fetchCapital()
-        setCapital(data)
-      } catch (error) {
-        console.error('Error fetching capital:', error)
-      }
-    }
-
-    const fetchStatus = async () => {
-      try {
-        const status = await apiService.getStatus()
-        if (status.last_execution) {
-          const date = new Date(status.last_execution)
-          const timeStr = date.toLocaleTimeString('en-IN', { 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
-          })
-          setLastScanTime(timeStr)
-        }
-      } catch (error) {
-        console.error('Error fetching status:', error)
-      }
-    }
-
-    fetchCapital()
-    fetchStatus()
-    // Refresh every 10 seconds
-    const capitalInterval = setInterval(fetchCapital, 10000)
-    const statusInterval = setInterval(fetchStatus, 10000)
-    
-    return () => {
-      clearInterval(capitalInterval)
-      clearInterval(statusInterval)
-    }
-  }, [])
+  // Don't auto-fetch - only load from backtest or manual trigger
+  // Remove automatic fetching to prevent unnecessary API calls
 
   const currentDate = new Date().toLocaleDateString('en-IN', { 
     day: '2-digit', 
