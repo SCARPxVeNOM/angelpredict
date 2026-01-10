@@ -69,6 +69,10 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
+    console.log(`[API] Calling: ${url}`);
+    console.log(`[API] Method: ${options.method || 'GET'}`);
+    console.log(`[API] Base URL: ${this.baseUrl}`);
+    
     const defaultOptions: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
@@ -80,17 +84,22 @@ class ApiService {
     try {
       const response = await fetch(url, config);
       
+      console.log(`[API] Response status: ${response.status}`);
+      
       if (!response.ok) {
         const error = await response.json().catch(() => ({
           error: `HTTP ${response.status}: ${response.statusText}`,
         }));
+        console.error(`[API] Error response:`, error);
         throw new Error(error.error || 'Request failed');
       }
 
       const data = await response.json();
+      console.log(`[API] Success:`, data);
       return data as T;
     } catch (error) {
-      console.error(`API Error [${endpoint}]:`, error);
+      console.error(`[API] Request failed for ${endpoint}:`, error);
+      console.error(`[API] Full URL was: ${url}`);
       throw error;
     }
   }
