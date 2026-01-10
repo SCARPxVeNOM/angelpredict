@@ -29,16 +29,10 @@ class EMACalculator:
             try:
                 from src.angelone_client import AngelOneClient
                 self.historical_client = AngelOneClient(api_type='HISTORICAL')
-                # Authenticate historical client
-                if not self.historical_client.authenticated:
-                    if self.historical_client.authenticate():
-                        logger.info("HISTORICAL API client authenticated successfully")
-                        self.client = self.historical_client
-                    else:
-                        logger.warning("Failed to authenticate HISTORICAL client, falling back to provided client")
-                        self.historical_client = None
-                else:
-                    self.client = self.historical_client
+                # DON'T authenticate on initialization - use lazy authentication
+                # Authentication will happen automatically on first API call
+                logger.info("HISTORICAL API client initialized (lazy authentication)")
+                self.client = self.historical_client
             except Exception as e:
                 logger.warning(f"Could not create HISTORICAL client, using provided client: {e}")
                 self.historical_client = None

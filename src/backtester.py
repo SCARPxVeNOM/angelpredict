@@ -36,26 +36,20 @@ class Backtester:
         
         try:
             self.historical_client = AngelOneClient(api_type='HISTORICAL')
-            # Authenticate Historical client
-            logger.info("Authenticating Historical API client...")
-            if not self.historical_client.authenticate():
-                logger.warning("Historical API authentication failed. Will use fallback client.")
-                self.historical_client = None
-            else:
-                logger.info("Historical API client authenticated successfully")
+            # DON'T authenticate on initialization - use lazy authentication
+            # Authentication will happen automatically on first API call
+            logger.info("Historical API client initialized (lazy authentication)")
+            self.historical_client = self.historical_client
         except Exception as e:
             logger.warning(f"Failed to initialize Historical client: {e}. Will use fallback client.")
             self.historical_client = None
         
         try:
             self.market_client = AngelOneClient(api_type='MARKET')
-            # Authenticate Market client
-            logger.info("Authenticating Market API client...")
-            if not self.market_client.authenticate():
-                logger.warning("Market API authentication failed. Will use fallback client.")
-                self.market_client = None
-            else:
-                logger.info("Market API client authenticated successfully")
+            # DON'T authenticate on initialization - use lazy authentication
+            # Authentication will happen automatically on first API call
+            logger.info("Market API client initialized (lazy authentication)")
+            self.market_client = self.market_client
         except Exception as e:
             logger.warning(f"Failed to initialize Market client: {e}. Will use fallback client.")
             self.market_client = None

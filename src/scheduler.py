@@ -62,16 +62,11 @@ class TradingScheduler:
             # Reset daily allocations if new day
             self.allocation_tracker.reset_daily_allocations()
             
-            # Ensure client is authenticated
+            # Ensure client is authenticated (lazy authentication)
+            # This will only authenticate when actually needed
             if not self.client.authenticated:
-                logger.warning("Client not authenticated, attempting authentication...")
-                if not self.client.authenticate():
-                    logger.error("Authentication failed, cannot execute algorithm")
-                    self.last_execution_result = {
-                        'success': False,
-                        'error': 'Authentication failed'
-                    }
-                    return
+                logger.info("Client not authenticated, will authenticate on first API call")
+                logger.info("Lazy authentication enabled - no API calls until data is requested")
             
             # Analyze all stocks
             logger.info("Analyzing Nifty 50 stocks...")

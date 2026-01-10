@@ -11,10 +11,33 @@ This document confirms that the entire system (both frontend and backend) is con
 - **Scheduler**: Initialized but **NOT started** (line 66 commented out)
 - **Flask API**: Only serves API endpoints, makes no automatic calls
 - **No background tasks**: No automatic execution on startup
+- **Lazy Authentication**: Authentication ONLY happens on first API call (not on startup)
 
 ```python
 # Line 66 in main.py - DISABLED
 # self.scheduler.start()  # DISABLED - no automatic execution
+
+# Lines 28-32 in main.py - NO AUTHENTICATION ON STARTUP
+# DO NOT authenticate on startup - this makes API calls!
+# Authentication will happen automatically when first API call is made
+logger.info("Skipping authentication on startup (will authenticate on first API call)")
+```
+
+### ✅ Lazy Authentication Pattern
+- **AngelOneClient**: Does NOT authenticate on initialization
+- **First API Call**: Automatically authenticates when needed
+- **Startup**: ZERO API calls to AngelOne
+- **Render Deploy**: No automatic authentication = No API calls
+
+```python
+# In angelone_client.py - Lazy authentication
+def get_historical_data(self, ...):
+    # Lazy authentication - authenticate only when first API call is made
+    if not self.authenticated:
+        logger.info("Not authenticated. Attempting authentication before API call...")
+        if not self.authenticate():
+            logger.error("Authentication failed. Cannot make API call.")
+            return None
 ```
 
 ### ✅ Scheduler (`src/scheduler.py`)
@@ -23,13 +46,15 @@ This document confirms that the entire system (both frontend and backend) is con
 - **No cron jobs**: Daily schedule exists but is never activated
 
 ### ✅ All Other Python Modules
-- **AngelOneClient**: Only makes API calls when explicitly requested
+- **AngelOneClient**: Only makes API calls when explicitly requested (lazy authentication)
 - **StockAnalyzer**: Only analyzes when called by API endpoint
 - **OrderManager**: Only places orders when triggered manually
-- **Backtester**: Only runs when `/api/backtest` endpoint is called
-- **EMACalculator**: Only calculates when requested
+- **Backtester**: Only runs when `/api/backtest` endpoint is called (lazy authentication)
+- **EMACalculator**: Only calculates when requested (lazy authentication)
 - **AllocationTracker**: Only tracks, no API calls
 - **Nifty50Fetcher**: Only reads local JSON file, no API calls
+
+**Key Change**: All clients now use **lazy authentication** - they initialize without authenticating, and only authenticate when the first API call is actually made.
 
 ### ✅ API Endpoints (Manual Triggers Only)
 1. **POST /api/backtest** - Run backtest simulation (fetches past 7 days data)
@@ -166,8 +191,9 @@ To verify no automatic API calls are being made:
 
 ## Last Updated
 **Date**: January 18, 2026  
-**Status**: ✅ All automatic API calls disabled  
-**Verification**: Complete
+**Status**: ✅ All automatic API calls disabled (including authentication)  
+**Verification**: Complete  
+**Key Fix**: Lazy authentication - no API calls on Render startup
 
 ---
 

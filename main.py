@@ -26,17 +26,15 @@ class TradingBot:
         try:
             logger.info("Initializing Trading Bot...")
             
-            # Initialize AngelOne client
-            logger.info("Initializing AngelOne client...")
+            # Initialize AngelOne client WITHOUT authentication
+            # Authentication will happen lazily when needed (on first API call)
+            logger.info("Initializing AngelOne client (without authentication)...")
             self.client = AngelOneClient()
             
-            # Authenticate
-            logger.info("Authenticating with AngelOne...")
-            if not self.client.authenticate():
-                logger.warning("Authentication failed. The bot will continue but may have limited functionality.")
-                logger.warning("Note: Some features require authentication. Check your credentials in .env file")
-                # Don't return False - allow bot to run in limited mode
-                # return False
+            # DO NOT authenticate on startup - this makes API calls!
+            # Authentication will happen automatically when first API call is made
+            logger.info("Skipping authentication on startup (will authenticate on first API call)")
+            logger.info("This prevents automatic API calls to AngelOne on Render deployment")
             
             # Initialize scheduler
             logger.info("Initializing scheduler...")
@@ -46,7 +44,7 @@ class TradingBot:
             logger.info("Initializing Flask API...")
             self.api = TradingAPI(self.client, self.scheduler)
             
-            logger.info("Trading Bot initialized successfully")
+            logger.info("Trading Bot initialized successfully (no API calls made)")
             return True
             
         except Exception as e:

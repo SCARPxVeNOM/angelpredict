@@ -168,9 +168,12 @@ class AngelOneClient:
             dict: Historical data or None if error
         """
         try:
+            # Lazy authentication - authenticate only when first API call is made
             if not self.authenticated:
-                logger.error("Not authenticated. Please authenticate first.")
-                return None
+                logger.info("Not authenticated. Attempting authentication before API call...")
+                if not self.authenticate():
+                    logger.error("Authentication failed. Cannot make API call.")
+                    return None
             
             # Generate cache key
             cache_key = APICache.generate_key(
@@ -251,9 +254,12 @@ class AngelOneClient:
             float: Current price or None if error
         """
         try:
+            # Lazy authentication - authenticate only when first API call is made
             if not self.authenticated:
-                logger.error("Not authenticated. Please authenticate first.")
-                return None
+                logger.info("Not authenticated. Attempting authentication before API call...")
+                if not self.authenticate():
+                    logger.error("Authentication failed. Cannot make API call.")
+                    return None
             
             # Use market quote API to get current price
             # Note: This is a simplified version. Actual implementation may vary
@@ -310,9 +316,12 @@ class AngelOneClient:
             dict: Order response with order ID or None if error
         """
         try:
+            # Lazy authentication - authenticate only when first API call is made
             if not self.authenticated:
-                logger.error("Not authenticated. Please authenticate first.")
-                return None
+                logger.info("Not authenticated. Attempting authentication before API call...")
+                if not self.authenticate():
+                    logger.error("Authentication failed. Cannot make API call.")
+                    return None
             
             # Ensure required fields are present
             required_fields = [
