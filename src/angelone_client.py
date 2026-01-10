@@ -7,6 +7,9 @@ from SmartApi import SmartConnect
 from logzero import logger
 import time
 from config import config
+from src.rate_limiter import RateLimiter
+from src.api_cache import APICache
+from src.retry_logic import retry_with_backoff, RateLimitError, NetworkError
 
 
 class AngelOneClient:
@@ -48,6 +51,14 @@ class AngelOneClient:
         self.refresh_token = None
         self.feed_token = None
         self.authenticated = False
+        
+        # Initialize rate limiter (3 requests per second)
+        self.rate_limiter = RateLimiter(rate=3.0, capacity=10)
+        
+        # Initialize cache (60 second TTL, 1000 entries max)
+        self.cache = APICache(max_size=1000, ttl_seconds=60)
+        
+        logger.info(f"AngelOneClient initialized with rate limiting and caching ({api_type} API)")
         
     def authenticate(self):
         """
@@ -144,7 +155,7 @@ class AngelOneClient:
     
     def get_historical_data(self, symbol_token, exchange, interval, from_date, to_date):
         """
-        Fetch historical candle data
+        Fetch historical candle data with rate limiting, caching, and retry logic.
         
         Args:
             symbol_token: Symbol token ID
@@ -161,6 +172,27 @@ class AngelOneClient:
                 logger.error("Not authenticated. Please authenticate first.")
                 return None
             
+            # Generate cache key
+            cache_key = APICache.generate_key(
+                "historical_data",
+                symbol_token=symbol_token,
+                exchange=exchange,
+                interval=interval,
+                from_date=from_date,
+                to_date=to_date
+            )
+            
+            # Check cache first
+            cached_data = self.cache.get(cache_key)
+            if cached_data is not None:
+                logger.debug(f"Cache hit for {symbol_token}")
+                return cached_data
+            
+            # Acquire rate limit token
+            if not self.rate_limiter.acquire(tokens=1, timeout=10.0):
+                logger.error(f"Rate limit timeout for {symbol_token}")
+                raise RateLimitError("Rate limit timeout")
+            
             historic_param = {
                 "exchange": exchange,
                 "symboltoken": str(symbol_token),
@@ -169,14 +201,40 @@ class AngelOneClient:
                 "todate": to_date
             }
             
-            response = self.smart_api.getCandleData(historic_param)
+            # Make API call with retry logic
+            @retry_with_backoff(
+                max_retries=3,
+                initial_delay=1.0,
+                max_delay=10.0,
+                exponential_base=2.0,
+                retry_on=(RateLimitError, NetworkError, Exception)
+            )
+            def _fetch_data():
+                response = self.smart_api.getCandleData(historic_param)
+                
+                # Check for rate limit error in response
+                if isinstance(response, dict) and response.get('message'):
+                    msg = str(response.get('message', '')).lower()
+                    if 'rate' in msg or 'limit' in msg or 'exceeded' in msg:
+                        logger.warning(f"Rate limit detected for {symbol_token}")
+                        raise RateLimitError(response.get('message'))
+                
+                return response
+            
+            response = _fetch_data()
             
             if response and 'data' in response:
-                return response['data']
+                data = response['data']
+                # Cache the successful response
+                self.cache.set(cache_key, data)
+                return data
             else:
                 logger.error(f"Failed to get historical data: {response}")
                 return None
                 
+        except RateLimitError as e:
+            logger.error(f"Rate limit error for {symbol_token}: {e}")
+            return None
         except Exception as e:
             logger.exception(f"Error fetching historical data for {symbol_token}: {e}")
             return None
