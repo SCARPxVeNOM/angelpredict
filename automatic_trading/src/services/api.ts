@@ -3,7 +3,8 @@
  * Centralized service for all backend API calls
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+// Remove trailing slash from API base URL to prevent double slashes
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000').replace(/\/$/, '');
 
 export interface Stock {
   id: string;
