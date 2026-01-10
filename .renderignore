@@ -1,0 +1,39 @@
+# Ignore frontend directory on Render (frontend is deployed separately on Vercel)
+automatic_trading/
+
+# Ignore local development files
+.env
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore test files
+tests/
+test_*.py
+*_test.py
+
+# Ignore documentation
+*.md
+!README.md
+
+# Ignore deployment files for other platforms
+vercel.json
+.vercel/

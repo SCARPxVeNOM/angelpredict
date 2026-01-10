@@ -14,7 +14,26 @@ services:
         value: false
       - key: USE_MPIN
         value: true
+      - key: PAPER_TRADING
+        value: true
+      - key: SIMULATE_ORDERS
+        value: true
     healthCheckPath: /api/health
+    
+    # Note: Add your sensitive environment variables in Render Dashboard:
+    # - TRADING_API_KEY
+    # - TRADING_SECRET_KEY
+    # - HISTORICAL_API_KEY
+    # - HISTORICAL_SECRET_KEY
+    # - MARKET_API_KEY
+    # - MARKET_SECRET_KEY
+    # - ANGELONE_USERNAME
+    # - ANGELONE_PASSWORD
+    # - ANGELONE_MPIN
+    # - ANGELONE_TOTP_TOKEN
+    # - GEMINI_API_KEY
+    # - FRONTEND_URL (set to your Vercel URL)
+
 
 
 

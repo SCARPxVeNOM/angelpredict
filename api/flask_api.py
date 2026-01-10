@@ -678,25 +678,30 @@ class TradingAPI:
         @self.app.route('/<path:path>')
         def serve_frontend(path):
             """
-            Serve React frontend build files
-            Handles SPA routing - all non-API routes serve index.html
+            API-only mode: Frontend is served separately on Vercel
+            This route returns a helpful message for root access
             """
             # If path starts with /api, let API routes handle it
             if path.startswith('api'):
                 return jsonify({'error': 'API endpoint not found'}), 404
             
-            # Check if it's a static asset (js, css, images, etc.)
-            if path and os.path.exists(os.path.join(config.FRONTEND_BUILD_PATH, path)):
-                return send_from_directory(config.FRONTEND_BUILD_PATH, path)
-            
-            # For all other routes, serve index.html (SPA routing)
-            if os.path.exists(config.FRONTEND_INDEX_PATH):
-                return send_file(config.FRONTEND_INDEX_PATH)
-            else:
-                return jsonify({
-                    'error': 'Frontend not built',
-                    'message': 'Please build the frontend first: cd automatic_trading && npm run build'
-                }), 404
+            # For root or any non-API path, return API info
+            return jsonify({
+                'service': 'Trading Bot API',
+                'status': 'running',
+                'message': 'This is the backend API. Frontend is hosted separately.',
+                'api_endpoints': {
+                    'health': '/api/health',
+                    'stocks': '/api/stocks',
+                    'capital': '/api/capital',
+                    'orders': '/api/orders',
+                    'logs': '/api/logs',
+                    'status': '/api/status',
+                    'backtest': 'POST /api/backtest',
+                    'ai_chat': 'POST /api/ai/chat'
+                },
+                'documentation': 'See README.md for full API documentation'
+            }), 200
     
     def run(self, host=None, port=None, debug=None):
         """
@@ -711,14 +716,8 @@ class TradingAPI:
         port = port or config.FLASK_PORT
         debug = debug if debug is not None else config.FLASK_DEBUG
         
-        # Check if frontend is built
-        if not os.path.exists(config.FRONTEND_BUILD_PATH):
-            logger.warning(f"Frontend build not found at {config.FRONTEND_BUILD_PATH}")
-            logger.warning("Frontend will not be served. Build it with: cd automatic_trading && npm run build")
-        else:
-            logger.info(f"Serving frontend from {config.FRONTEND_BUILD_PATH}")
-        
         logger.info(f"Starting Flask API server on {host}:{port}")
         logger.info(f"API endpoints available at http://{host}:{port}/api/")
+        logger.info("Running in API-only mode (frontend served separately)")
         self.app.run(host=host, port=port, debug=debug, threaded=True)
 
