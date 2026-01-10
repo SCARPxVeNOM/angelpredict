@@ -116,7 +116,10 @@ class EMACalculator:
             )
             
             if not historical_data:
-                logger.warning(f"No historical data for token {symbol_token} using {config.EMA_TIMEFRAME} timeframe")
+                logger.warning(
+                    f"No historical data for token {symbol_token} using {config.EMA_TIMEFRAME} timeframe. "
+                    f"Date range: {from_date_str} to {to_date_str}"
+                )
                 # Try fallback to daily candles if hourly doesn't work
                 if config.EMA_TIMEFRAME != "ONE_DAY":
                     logger.info(f"Attempting fallback to ONE_DAY timeframe for token {symbol_token}")
@@ -128,14 +131,33 @@ class EMACalculator:
                         to_date=to_date_str
                     )
                     
-                    if historical_data and len(historical_data) >= self.ema_period:
-                        logger.info(f"Successfully fetched {len(historical_data)} daily candles for token {symbol_token}")
+                    if historical_data:
+                        logger.info(f"Fallback to ONE_DAY returned {len(historical_data)} candles for token {symbol_token}")
+                        if len(historical_data) >= self.ema_period:
+                            logger.info(f"Successfully fetched {len(historical_data)} daily candles for token {symbol_token}")
+                        else:
+                            logger.warning(
+                                f"Fallback to ONE_DAY returned insufficient data for token {symbol_token}: "
+                                f"{len(historical_data)} < {self.ema_period}. "
+                                f"Date range: {from_date_str} to {to_date_str}. "
+                                f"This might indicate the token is invalid, delisted, or API has no data for this period."
+                            )
+                            return {
+                                'ema': None,
+                                'current_price': None,
+                                'data_points': len(historical_data),
+                                'success': False
+                            }
                     else:
-                        logger.warning(f"Fallback to ONE_DAY also failed for token {symbol_token}")
+                        logger.warning(
+                            f"Fallback to ONE_DAY also failed for token {symbol_token} - no data returned. "
+                            f"Date range: {from_date_str} to {to_date_str}. "
+                            f"This might indicate the token is invalid, delisted, or API has no data."
+                        )
                         return {
                             'ema': None,
                             'current_price': None,
-                            'data_points': 0 if not historical_data else len(historical_data),
+                            'data_points': 0,
                             'success': False
                         }
                 else:

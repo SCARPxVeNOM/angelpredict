@@ -305,6 +305,8 @@ class TradingAPI:
             try:
                 top_stocks = self.stock_analyzer.get_top_n_stocks(n=config.MAX_COMPANIES)
                 
+                logger.info(f"API /api/stocks: Found {len(top_stocks)} top stocks")
+                
                 # Format to match frontend Stock interface
                 stocks = []
                 for idx, stock in enumerate(top_stocks, 1):
@@ -330,6 +332,8 @@ class TradingAPI:
                         'quantity': quantity,
                         'orderStatus': 'simulated' if is_allocated else 'pending'
                     })
+                
+                logger.info(f"API /api/stocks: Returning {len(stocks)} stocks to frontend")
                 
                 return jsonify({
                     'success': True,
