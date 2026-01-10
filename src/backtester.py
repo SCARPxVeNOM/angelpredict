@@ -226,7 +226,7 @@ class Backtester:
         
         Args:
             days: Number of days to simulate (default: 7)
-            start_date: Start date (default: today - days)
+            start_date: Start date (default: today)
         
         Returns:
             dict: Complete backtest results
@@ -238,17 +238,39 @@ class Backtester:
             if start_date is None:
                 start_date = datetime.now(pytz.timezone(config.MARKET_TIMEZONE))
             
+            # Go backward from start_date to get past trading days
             dates = []
-            current_date = start_date - timedelta(days=days)
+            current_date = start_date - timedelta(days=1)  # Start from yesterday
+            days_checked = 0
+            max_days_to_check = days * 3  # Check up to 3x days to account for weekends
             
-            # Get last 7 trading days (excluding weekends)
-            while len(dates) < days:
+            # Get last N trading days (excluding weekends and today)
+            while len(dates) < days and days_checked < max_days_to_check:
                 # Skip weekends (Saturday=5, Sunday=6)
                 if current_date.weekday() < 5:  # Monday=0, Friday=4
                     dates.append(current_date)
-                current_date += timedelta(days=1)
-                if current_date >= start_date:
-                    break
+                current_date -= timedelta(days=1)  # Go backward
+                days_checked += 1
+            
+            # Reverse to get chronological order (oldest first)
+            dates.reverse()
+            
+            if len(dates) == 0:
+                logger.warning("No trading days found in the specified range")
+                return {
+                    'error': 'No trading days found',
+                    'period': 'N/A',
+                    'total_days': 0,
+                    'simulated_days': 0,
+                    'total_orders': 0,
+                    'total_allocated': 0,
+                    'average_daily_allocation': 0,
+                    'unique_stocks': 0,
+                    'average_orders_per_day': 0,
+                    'results': []
+                }
+            
+            logger.info(f"Backtesting dates: {[d.strftime('%Y-%m-%d') for d in dates]}")
             
             # Simulate each date
             results = []
