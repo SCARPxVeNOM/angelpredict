@@ -298,7 +298,7 @@ class TradingAPI:
                 }), 500
         
         # New endpoints matching frontend expectations
-        @self.app.route('/api/stocks', methods=['GET'])
+        @self.app.route('/api/stocks', methods=['GET', 'OPTIONS'])
         def get_stocks():
             """
             Get eligible stocks in frontend Stock format
@@ -306,7 +306,14 @@ class TradingAPI:
             Returns:
                 JSON: List of stocks matching frontend Stock interface
             """
+            # Handle preflight OPTIONS request
+            if request.method == 'OPTIONS':
+                return jsonify({'success': True}), 200
+                
             try:
+                logger.info("API /api/stocks: Request received")
+                
+                # Get top stocks from analyzer
                 top_stocks = self.stock_analyzer.get_top_n_stocks(n=config.MAX_COMPANIES)
                 
                 logger.info(f"API /api/stocks: Found {len(top_stocks)} top stocks")
@@ -324,7 +331,7 @@ class TradingAPI:
                     
                     is_allocated = self.allocation_tracker.is_allocated_today(stock['symbol'])
                     
-                    stocks.append({
+                    stock_data = {
                         'id': str(idx),
                         'symbol': stock['symbol'],
                         'name': stock['name'],
@@ -335,7 +342,9 @@ class TradingAPI:
                         'allocatedAmount': config.ALLOCATION_PER_COMPANY,
                         'quantity': quantity,
                         'orderStatus': 'simulated' if is_allocated else 'pending'
-                    })
+                    }
+                    stocks.append(stock_data)
+                    logger.debug(f"API /api/stocks: Added stock {stock['symbol']}: {stock_data}")
                 
                 logger.info(f"API /api/stocks: Returning {len(stocks)} stocks to frontend")
                 
@@ -344,10 +353,14 @@ class TradingAPI:
                 else:
                     logger.info(f"API /api/stocks: Eligible stocks: {[s['symbol'] for s in stocks]}")
                 
-                return jsonify({
+                response_data = {
                     'success': True,
                     'stocks': stocks
-                })
+                }
+                
+                logger.info(f"API /api/stocks: Response data: {json.dumps(response_data, indent=2)}")
+                
+                return jsonify(response_data), 200
                 
             except Exception as e:
                 logger.exception(f"Error getting stocks: {e}")
