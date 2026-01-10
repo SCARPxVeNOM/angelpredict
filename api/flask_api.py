@@ -580,8 +580,26 @@ class TradingAPI:
                 # Run backtest
                 results = self.backtester.run_backtest(days=days, start_date=start_date)
                 
-                # Save results
-                saved_file = self.backtester.save_results(results)
+                # Check if backtest returned an error
+                if results and 'error' in results:
+                    logger.error(f"Backtest failed: {results['error']}")
+                    return jsonify({
+                        'success': False,
+                        'error': results['error'],
+                        'results': None
+                    }), 400
+                
+                # Save results (if no error)
+                if results and 'error' not in results:
+                    try:
+                        saved_file = self.backtester.save_results(results)
+                    except Exception as save_error:
+                        logger.warning(f"Failed to save backtest results: {save_error}")
+                        saved_file = None
+                else:
+                    saved_file = None
+                
+                logger.info(f"Backtest completed successfully: {results.get('total_orders', 0)} orders, {results.get('simulated_days', 0)} days simulated")
                 
                 return jsonify({
                     'success': True,
@@ -591,9 +609,18 @@ class TradingAPI:
                 
             except Exception as e:
                 logger.exception(f"Error running backtest: {e}")
+                error_message = str(e)
+                
+                # Provide user-friendly error messages
+                if 'authenticated' in error_message.lower() or 'authentication' in error_message.lower():
+                    error_message = "Authentication required. Please ensure HISTORICAL and MARKET API clients are configured."
+                elif 'historical' in error_message.lower() or 'data' in error_message.lower():
+                    error_message = "Unable to fetch historical data. Please check HISTORICAL_API_KEY configuration."
+                
                 return jsonify({
                     'success': False,
-                    'error': str(e)
+                    'error': error_message,
+                    'results': None
                 }), 500
         
         @self.app.route('/api/backtest/results', methods=['GET'])
@@ -640,7 +667,8 @@ class TradingAPI:
                 logger.exception(f"Error getting backtest results: {e}")
                 return jsonify({
                     'success': False,
-                    'error': str(e)
+                    'error': f"Failed to load backtest results: {str(e)}",
+                    'results': None
                 }), 500
     
     def _register_static_routes(self):

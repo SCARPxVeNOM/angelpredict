@@ -42,10 +42,19 @@ const BacktestPanel = () => {
     try {
       setLoading(true)
       setError(null)
+      setResults(null)
       const data = await apiService.runBacktest(days)
+      
+      // Check if response contains error
+      if (data && data.error) {
+        setError(data.error)
+        return
+      }
+      
       setResults(data)
     } catch (err: any) {
-      setError(err.message || 'Failed to run backtest')
+      const errorMsg = err?.message || err?.error || 'Failed to run backtest. Please check backend configuration and logs.'
+      setError(errorMsg)
       console.error('Backtest error:', err)
     } finally {
       setLoading(false)
@@ -56,10 +65,20 @@ const BacktestPanel = () => {
     try {
       setLoading(true)
       setError(null)
+      setResults(null)
       const data = await apiService.getBacktestResults()
+      
+      // Check if response contains error
+      if (data && data.error) {
+        setError(data.error)
+        return
+      }
+      
       setResults(data)
     } catch (err: any) {
-      setError(err.message || 'No previous results found')
+      const errorMsg = err?.message || err?.error || 'No previous backtest results found. Run a backtest first.'
+      setError(errorMsg)
+      console.error('Load results error:', err)
     } finally {
       setLoading(false)
     }

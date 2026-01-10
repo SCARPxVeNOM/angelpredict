@@ -26,18 +26,47 @@ class Backtester:
         Args:
             angelone_client: AngelOneClient instance (for reference, we'll create separate clients)
         """
+        # Use the provided client if HISTORICAL/MARKET clients fail
+        self.fallback_client = angelone_client
+        
         # Create separate clients for Historical and Market APIs
-        self.historical_client = AngelOneClient(api_type='HISTORICAL')
-        self.market_client = AngelOneClient(api_type='MARKET')
+        self.historical_client = None
+        self.market_client = None
         
-        # Authenticate both clients
-        logger.info("Authenticating Historical API client...")
-        if not self.historical_client.authenticate():
-            logger.warning("Historical API authentication failed. Backtest may have limited functionality.")
+        try:
+            self.historical_client = AngelOneClient(api_type='HISTORICAL')
+            # Authenticate Historical client
+            logger.info("Authenticating Historical API client...")
+            if not self.historical_client.authenticate():
+                logger.warning("Historical API authentication failed. Will use fallback client.")
+                self.historical_client = None
+            else:
+                logger.info("Historical API client authenticated successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Historical client: {e}. Will use fallback client.")
+            self.historical_client = None
         
-        logger.info("Authenticating Market API client...")
-        if not self.market_client.authenticate():
-            logger.warning("Market API authentication failed. Backtest may have limited functionality.")
+        try:
+            self.market_client = AngelOneClient(api_type='MARKET')
+            # Authenticate Market client
+            logger.info("Authenticating Market API client...")
+            if not self.market_client.authenticate():
+                logger.warning("Market API authentication failed. Will use fallback client.")
+                self.market_client = None
+            else:
+                logger.info("Market API client authenticated successfully")
+        except Exception as e:
+            logger.warning(f"Failed to initialize Market client: {e}. Will use fallback client.")
+            self.market_client = None
+        
+        # Use fallback client if HISTORICAL client is not available
+        if self.historical_client is None:
+            logger.info("Using fallback client for historical data")
+            self.historical_client = self.fallback_client
+        
+        if self.market_client is None:
+            logger.info("Using fallback client for market data")
+            self.market_client = self.fallback_client
         
         self.nifty50_fetcher = Nifty50Fetcher()
         self.results = []
@@ -261,8 +290,19 @@ class Backtester:
             
         except Exception as e:
             logger.exception(f"Error running backtest: {e}")
+            error_msg = str(e)
+            if not self.historical_client or not self.historical_client.authenticated:
+                error_msg = "Historical API authentication required. Please check HISTORICAL_API_KEY and HISTORICAL_SECRET_KEY in environment variables."
             return {
-                'error': str(e),
+                'error': error_msg,
+                'period': 'N/A',
+                'total_days': 0,
+                'simulated_days': 0,
+                'total_orders': 0,
+                'total_allocated': 0,
+                'average_daily_allocation': 0,
+                'unique_stocks': 0,
+                'average_orders_per_day': 0,
                 'results': []
             }
     

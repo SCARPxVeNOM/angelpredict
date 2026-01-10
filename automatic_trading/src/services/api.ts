@@ -297,7 +297,8 @@ class ApiService {
       const response = await this.request<{
         success: boolean;
         results: any;
-        saved_to: string;
+        saved_to?: string;
+        error?: string;
       }>('/api/backtest', {
         method: 'POST',
         body: JSON.stringify({
@@ -305,10 +306,16 @@ class ApiService {
           start_date: startDate,
         }),
       });
-      return response.results;
-    } catch (error) {
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Backtest failed');
+      }
+      
+      return response.results || response;
+    } catch (error: any) {
       console.error('Error running backtest:', error);
-      throw error;
+      const errorMessage = error?.message || error?.error || 'Failed to run backtest. Please check backend logs.';
+      throw new Error(errorMessage);
     }
   }
 
@@ -320,12 +327,19 @@ class ApiService {
       const response = await this.request<{
         success: boolean;
         results: any;
-        file: string;
+        file?: string;
+        error?: string;
       }>('/api/backtest/results');
-      return response.results;
-    } catch (error) {
+      
+      if (!response.success) {
+        throw new Error(response.error || 'No backtest results found');
+      }
+      
+      return response.results || response;
+    } catch (error: any) {
       console.error('Error getting backtest results:', error);
-      throw error;
+      const errorMessage = error?.message || error?.error || 'No previous backtest results found. Run a backtest first.';
+      throw new Error(errorMessage);
     }
   }
 }
