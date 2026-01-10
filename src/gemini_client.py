@@ -23,8 +23,28 @@ class GeminiClient:
             api_key: Gemini API key (defaults to config)
         """
         self.api_key = api_key or config.GEMINI_API_KEY
-        genai.configure(api_key=self.api_key)
-        self.model = genai.GenerativeModel('gemini-pro')
+        
+        if not self.api_key or self.api_key == "":
+            logger.warning("Gemini API key is not set. AI features will be limited.")
+            self.model = None
+            return
+        
+        try:
+            genai.configure(api_key=self.api_key)
+            # Try newer model first, fallback to older one
+            try:
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                logger.info("Initialized Gemini client with gemini-1.5-flash model")
+            except Exception:
+                try:
+                    self.model = genai.GenerativeModel('gemini-pro')
+                    logger.info("Initialized Gemini client with gemini-pro model")
+                except Exception as e:
+                    logger.error(f"Failed to initialize Gemini model: {e}")
+                    self.model = None
+        except Exception as e:
+            logger.error(f"Failed to configure Gemini client: {e}")
+            self.model = None
         
     def generate_response(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
         """
@@ -37,6 +57,15 @@ class GeminiClient:
         Returns:
             str: AI response
         """
+        # Check if model is initialized
+        if not self.model:
+            logger.error("Gemini model not initialized. Check GEMINI_API_KEY in environment variables.")
+            return (
+                "I'm currently unavailable. The AI service requires a valid Gemini API key. "
+                "Please check the backend configuration. This is a simulation environment, "
+                "so you can still use the platform for paper trading."
+            )
+        
         try:
             # Build context-aware prompt
             full_prompt = self._build_prompt(prompt, context)
@@ -48,11 +77,38 @@ class GeminiClient:
                 return response.text
             else:
                 logger.warning("Empty response from Gemini API")
-                return "I apologize, but I couldn't generate a response. Please try again."
+                return (
+                    "I apologize, but I couldn't generate a response at this time. "
+                    "This might be due to API limitations or network issues. "
+                    "Please try again in a moment."
+                )
                 
         except Exception as e:
+            error_msg = str(e).lower()
             logger.exception(f"Error generating Gemini response: {e}")
-            return f"I encountered an error while processing your request: {str(e)}"
+            
+            # Provide user-friendly error messages based on error type
+            if "api key" in error_msg or "authentication" in error_msg or "invalid" in error_msg:
+                return (
+                    "I'm unable to connect to the AI service. This is likely due to an invalid or missing API key. "
+                    "Please check the backend configuration. The trading simulation features are still available."
+                )
+            elif "quota" in error_msg or "rate limit" in error_msg:
+                return (
+                    "I've reached the API rate limit. Please try again in a few moments. "
+                    "The trading simulation features are still fully functional."
+                )
+            elif "network" in error_msg or "connection" in error_msg or "timeout" in error_msg:
+                return (
+                    "I'm having trouble connecting to the AI service. This might be a network issue. "
+                    "Please try again in a moment. The trading features are still available."
+                )
+            else:
+                return (
+                    f"I encountered an error: {str(e)[:100]}. "
+                    "This is a simulation environment, so you can still use all trading features. "
+                    "Please try rephrasing your question or try again later."
+                )
     
     def _build_prompt(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> str:
         """

@@ -479,10 +479,22 @@ class TradingAPI:
                 
             except Exception as e:
                 logger.exception(f"Error in AI chat: {e}")
+                # Return the error message from Gemini client if available
+                error_response = 'I encountered an error. Please try again.'
+                try:
+                    # Try to get a more specific error from Gemini client
+                    if hasattr(self.gemini_client, 'model') and self.gemini_client.model is None:
+                        error_response = (
+                            "AI service is unavailable. The Gemini API key may be missing or invalid. "
+                            "Please check the backend configuration. Trading features are still available."
+                        )
+                except:
+                    pass
+                
                 return jsonify({
                     'success': False,
                     'error': str(e),
-                    'response': 'I encountered an error. Please try again.'
+                    'response': error_response
                 }), 500
         
         @self.app.route('/api/ai/analyze', methods=['POST'])
