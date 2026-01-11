@@ -27,7 +27,8 @@ USE_MPIN = os.getenv("USE_MPIN", "false").lower() == "true"  # Set to true to us
 
 # Trading Parameters
 TOTAL_CAPITAL = 300000  # ₹3,00,000
-ALLOCATION_PER_COMPANY = 15000  # ₹15,000 per company (5% of total capital)
+TOTAL_ALLOCATION = 15000  # ₹15,000 total allocation for top 5 companies
+ALLOCATION_PER_COMPANY = 3000  # ₹3,000 per company (₹15,000 / 5 companies)
 MAX_COMPANIES = 5  # Top 5 companies
 
 # Market Settings

@@ -436,6 +436,112 @@ class TradingAPI:
                     'stocks': []
                 }), 500
         
+        @self.app.route('/api/stocks/allocate', methods=['POST'])
+        def allocate_stocks():
+            """
+            Allocate paper trades for the provided stocks
+            
+            Request body:
+                {
+                    "stocks": [
+                        {
+                            "symbol": "ITC",
+                            "name": "ITC Limited",
+                            "lastClose": 337.15,
+                            "quantity": 8,
+                            "allocatedAmount": 3000
+                        },
+                        ...
+                    ]
+                }
+            
+            Returns:
+                JSON: Allocation results with order details
+            """
+            try:
+                data = request.get_json()
+                stocks = data.get('stocks', [])
+                
+                if not stocks:
+                    return jsonify({
+                        'success': False,
+                        'error': 'No stocks provided for allocation'
+                    }), 400
+                
+                logger.info(f"API /api/stocks/allocate: Allocating {len(stocks)} stocks")
+                
+                # Simulate paper trades for each stock
+                allocated_orders = []
+                total_allocated = 0
+                
+                for stock in stocks:
+                    symbol = stock.get('symbol')
+                    name = stock.get('name', symbol)
+                    price = stock.get('lastClose', 0)
+                    quantity = stock.get('quantity', 0)
+                    amount = stock.get('allocatedAmount', config.ALLOCATION_PER_COMPANY)
+                    
+                    # Create simulated order
+                    order_id = f"PAPER_{symbol}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                    timestamp = datetime.now().isoformat()
+                    
+                    order = {
+                        'id': order_id,
+                        'order_id': order_id,
+                        'symbol': symbol,
+                        'name': name,
+                        'quantity': quantity,
+                        'price': price,
+                        'amount': amount,
+                        'timestamp': timestamp,
+                        'status': 'simulated',
+                        'apiResponse': 'PAPER_TRADE_SUCCESS'
+                    }
+                    
+                    allocated_orders.append(order)
+                    total_allocated += amount
+                    
+                    # Track allocation
+                    self.allocation_tracker.add_allocation(symbol, amount)
+                    
+                    logger.info(f"API /api/stocks/allocate: Allocated {symbol} - ₹{amount} ({quantity} shares @ ₹{price})")
+                
+                # Save orders to file
+                order_history_file = config.ORDER_HISTORY_FILE
+                existing_orders = []
+                
+                if os.path.exists(order_history_file):
+                    try:
+                        with open(order_history_file, 'r') as f:
+                            existing_orders = json.load(f)
+                    except:
+                        existing_orders = []
+                
+                # Add new orders
+                existing_orders.extend(allocated_orders)
+                
+                # Save updated orders
+                os.makedirs(os.path.dirname(order_history_file), exist_ok=True)
+                with open(order_history_file, 'w') as f:
+                    json.dump(existing_orders, f, indent=2)
+                
+                logger.info(f"API /api/stocks/allocate: Successfully allocated {len(allocated_orders)} orders, total: ₹{total_allocated}")
+                
+                return jsonify({
+                    'success': True,
+                    'orders': allocated_orders,
+                    'total_allocated': total_allocated,
+                    'message': f'Successfully allocated {len(allocated_orders)} paper trades'
+                }), 200
+                
+            except Exception as e:
+                logger.exception(f"Error allocating stocks: {e}")
+                return jsonify({
+                    'success': False,
+                    'error': str(e),
+                    'orders': []
+                }), 500
+        
         @self.app.route('/api/capital', methods=['GET'])
         def get_capital():
             """

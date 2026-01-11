@@ -11,6 +11,7 @@ const StockTable = () => {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   const [stocks, setStocks] = useState<Stock[]>([])
   const [loading, setLoading] = useState(false)
+  const [allocating, setAllocating] = useState(false)
   const { openDrawer } = useAI()
 
   // Don't auto-fetch stocks - only load from manual trigger or backtest
@@ -25,6 +26,38 @@ const StockTable = () => {
       console.error('Error fetching stocks:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAllocate = async () => {
+    if (stocks.length === 0) {
+      alert('No stocks to allocate. Please scan for stocks first.')
+      return
+    }
+
+    if (allocating) return
+
+    try {
+      setAllocating(true)
+      
+      // Allocate paper trades for all scanned stocks
+      const response = await apiService.allocateStocks(stocks)
+      
+      // Update stock statuses to 'simulated'
+      const updatedStocks = stocks.map(stock => ({
+        ...stock,
+        orderStatus: 'simulated' as const
+      }))
+      setStocks(updatedStocks)
+      
+      // Show success message
+      alert(`✅ Successfully allocated ${response.orders.length} paper trades!\nTotal: ₹${response.total_allocated.toLocaleString()}`)
+      
+    } catch (error: any) {
+      console.error('Error allocating stocks:', error)
+      alert(`❌ Failed to allocate: ${error.message}`)
+    } finally {
+      setAllocating(false)
     }
   }
 
@@ -80,6 +113,16 @@ const StockTable = () => {
                 <Sparkles className="w-4 h-4 text-accent-primary" />
                 <span className="text-sm font-semibold text-accent-primary">
                   {loading ? 'Scanning...' : 'Scan Now'}
+                </span>
+              </button>
+              <button
+                onClick={handleAllocate}
+                disabled={allocating || stocks.length === 0}
+                className="px-4 py-2 rounded-lg bg-accent-success/10 border border-accent-success/30 hover:bg-accent-success/20 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                <ChevronRight className="w-4 h-4 text-accent-success" />
+                <span className="text-sm font-semibold text-accent-success">
+                  {allocating ? 'Allocating...' : 'Allocate'}
                 </span>
               </button>
               <div className="px-3 py-1.5 rounded-lg bg-dark-surface border border-dark-border">

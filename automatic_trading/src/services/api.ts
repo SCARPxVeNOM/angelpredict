@@ -409,6 +409,36 @@ class ApiService {
       throw new Error(errorMessage);
     }
   }
+
+  /**
+   * Allocate paper trades for stocks
+   */
+  async allocateStocks(stocks: Stock[]): Promise<any> {
+    try {
+      const response = await this.request<{
+        success: boolean;
+        orders: any[];
+        total_allocated: number;
+        message: string;
+        error?: string;
+      }>('/api/stocks/allocate', {
+        method: 'POST',
+        body: JSON.stringify({
+          stocks
+        })
+      });
+      
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to allocate stocks');
+      }
+      
+      return response;
+    } catch (error: any) {
+      console.error('Error allocating stocks:', error);
+      const errorMessage = error?.message || error?.error || 'Failed to allocate paper trades.';
+      throw new Error(errorMessage);
+    }
+  }
 }
 
 // Export singleton instance
