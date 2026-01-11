@@ -501,8 +501,8 @@ class TradingAPI:
                     allocated_orders.append(order)
                     total_allocated += amount
                     
-                    # Track allocation
-                    self.allocation_tracker.add_allocation(symbol, amount)
+                    # Track allocation using mark_allocated method
+                    self.allocation_tracker.mark_allocated(symbol, order_id, amount)
                     
                     logger.info(f"API /api/stocks/allocate: Allocated {symbol} - ₹{amount} ({quantity} shares @ ₹{price})")
                 
