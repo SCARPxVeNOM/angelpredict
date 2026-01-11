@@ -9,14 +9,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # API Keys
-TRADING_API_KEY = os.getenv("TRADING_API_KEY", "9DYha4fz")
-TRADING_SECRET_KEY = os.getenv("TRADING_SECRET_KEY", "07f4e644-bfba-4245-920b-fc287bfb7dd2")
+TRADING_API_KEY = os.getenv("TRADING_API_KEY",)
+TRADING_SECRET_KEY = os.getenv("TRADING_SECRET_KEY",)
 
-HISTORICAL_API_KEY = os.getenv("HISTORICAL_API_KEY", "GEa34V7A")
-HISTORICAL_SECRET_KEY = os.getenv("HISTORICAL_SECRET_KEY", "bd409a72-8ea4-44e3-b656-be829af41674")
+HISTORICAL_API_KEY = os.getenv("HISTORICAL_API_KEY",)
+HISTORICAL_SECRET_KEY = os.getenv("HISTORICAL_SECRET_KEY",)
 
-MARKET_API_KEY = os.getenv("MARKET_API_KEY", "7TmcRllV")
-MARKET_SECRET_KEY = os.getenv("MARKET_SECRET_KEY", "1a02e75d-1a1f-4f9a-96fb-e8a9e4107393")
+MARKET_API_KEY = os.getenv("MARKET_API_KEY",)
+MARKET_SECRET_KEY = os.getenv("MARKET_SECRET_KEY",)
 
 # AngelOne Credentials (to be set in .env)
 ANGELONE_USERNAME = os.getenv("ANGELONE_USERNAME", "")
@@ -59,7 +59,7 @@ DAILY_ALLOCATIONS_FILE = f"{DATA_DIR}/daily_allocations.json"
 ORDER_HISTORY_FILE = f"{DATA_DIR}/order_history.json"
 
 # Gemini AI Settings
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDU8bKCXRpEzvXeLG-mP6dT2Fm2P-koQ0Q")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY",)
 
 # Frontend Settings
 FRONTEND_BUILD_PATH = "automatic_trading/dist"
