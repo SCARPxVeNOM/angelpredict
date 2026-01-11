@@ -5,7 +5,7 @@ A professional, production-grade web dashboard for an automated after-market sto
 ## 🎯 Features
 
 - **Real-time Market Scanning** - Automated scanning after market close
-- **Smart Stock Selection** - Filters stocks with ≤ -5% drop and picks top 5
+- **Smart Stock Selection** - Filters stocks with ≤ -3% drop and picks top 5
 - **Paper Trading Mode** - Simulates trades with ₹3,00,000 virtual capital
 - **Angel One Integration** - Built for Angel One SmartAPI
 - **Professional UI** - Institutional-grade fintech interface comparable to Zerodha Kite and TradingView

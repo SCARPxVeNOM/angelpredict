@@ -38,7 +38,7 @@ MARKET_TIMEZONE = "Asia/Kolkata"  # IST
 # EMA Parameters
 EMA_PERIOD = 20
 EMA_TIMEFRAME = "ONE_HOUR"  # Hourly candles
-FALL_THRESHOLD = 5.0  # 5% below EMA
+FALL_THRESHOLD = 3.0  # 3% below EMA
 
 # Order Settings
 ORDER_VARIETY = "NORMAL"

@@ -4,11 +4,16 @@ Initializes AngelOne client, starts Flask API server and scheduler
 """
 import signal
 import sys
-from logzero import logger
+import os
+from logzero import logger, logfile
 from config import config
 from src.angelone_client import AngelOneClient
 from src.scheduler import TradingScheduler
 from api.flask_api import TradingAPI
+
+# Configure logzero to write to file
+os.makedirs("logs", exist_ok=True)
+logfile("logs/trading_bot.log", maxBytes=10e6, backupCount=3)  # 10MB max, 3 backups
 
 
 class TradingBot:

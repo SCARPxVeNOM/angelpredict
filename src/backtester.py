@@ -148,7 +148,7 @@ class Backtester:
                     if fall_percentage is None:
                         continue
                     
-                    # Check if meets threshold (>= 5%)
+                    # Check if meets threshold (>= 3%)
                     if fall_percentage >= config.FALL_THRESHOLD:
                         eligible_stocks.append({
                             'symbol': symbol,

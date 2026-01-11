@@ -73,7 +73,7 @@ class TradingAPI:
         @self.app.route('/api/eligible-companies', methods=['GET'])
         def get_eligible_companies():
             """
-            Get list of companies currently eligible (5% below EMA)
+            Get list of companies currently eligible (3% below EMA)
             
             Returns:
                 JSON: List of eligible companies sorted by fall percentage
@@ -487,27 +487,104 @@ class TradingAPI:
             try:
                 # Generate logs from recent activity
                 logs = []
+                log_id = 1
                 
-                # Add status log
-                logs.append({
-                    'id': 'log_status',
-                    'timestamp': datetime.now().strftime('%H:%M:%S'),
-                    'message': 'System operational',
-                    'severity': 'success'
-                })
+                # Read from log file if it exists
+                log_file = "logs/trading_bot.log"
+                if os.path.exists(log_file):
+                    try:
+                        with open(log_file, 'r') as f:
+                            # Read last 100 lines
+                            lines = f.readlines()[-100:]
+                            
+                            for line in lines:
+                                # Parse log line
+                                # Format: [timestamp] level - message
+                                if '[' in line and ']' in line:
+                                    try:
+                                        timestamp_part = line.split(']')[0].split('[')[1]
+                                        # Extract time only (HH:MM:SS)
+                                        if ' ' in timestamp_part:
+                                            time_str = timestamp_part.split(' ')[1].split('.')[0]
+                                        else:
+                                            time_str = timestamp_part.split('.')[0]
+                                        
+                                        # Extract severity
+                                        severity = 'info'
+                                        if 'ERROR' in line or 'Error' in line:
+                                            severity = 'error'
+                                        elif 'WARNING' in line or 'Warning' in line:
+                                            severity = 'warning'
+                                        elif 'SUCCESS' in line or 'completed' in line or 'Successfully' in line:
+                                            severity = 'success'
+                                        
+                                        # Extract message (everything after the level)
+                                        message_parts = line.split(' - ', 1)
+                                        if len(message_parts) > 1:
+                                            message = message_parts[1].strip()
+                                        else:
+                                            message = line.strip()
+                                        
+                                        logs.append({
+                                            'id': f'log_{log_id}',
+                                            'timestamp': time_str,
+                                            'message': message,
+                                            'severity': severity
+                                        })
+                                        log_id += 1
+                                    except:
+                                        continue
+                    except Exception as e:
+                        logger.warning(f"Error reading log file: {e}")
                 
-                # Add order logs
-                orders = self.allocation_tracker.get_today_orders()
-                for idx, order in enumerate(orders, 1):
+                # If no logs from file, generate from recent activity
+                if len(logs) == 0:
+                    # Add status log
                     logs.append({
-                        'id': f'log_order_{idx}',
-                        'timestamp': order.get('timestamp', datetime.now().isoformat()).split('T')[1][:8] if 'T' in str(order.get('timestamp', '')) else datetime.now().strftime('%H:%M:%S'),
-                        'message': f"Order placed: {order.get('symbol', 'N/A')} - {order.get('amount', 0):.2f}",
-                        'severity': 'success'
+                        'id': 'log_status',
+                        'timestamp': datetime.now().strftime('%H:%M:%S'),
+                        'message': 'System operational - No recent activity',
+                        'severity': 'info'
                     })
+                    
+                    # Add backtest logs if available
+                    backtest_file = "data/backtest_results_latest.json"
+                    if os.path.exists(backtest_file):
+                        try:
+                            with open(backtest_file, 'r') as f:
+                                backtest_data = json.load(f)
+                                
+                                logs.append({
+                                    'id': f'log_{log_id}',
+                                    'timestamp': datetime.now().strftime('%H:%M:%S'),
+                                    'message': f"Last backtest: {backtest_data.get('total_orders', 0)} orders, {backtest_data.get('simulated_days', 0)} days",
+                                    'severity': 'success'
+                                })
+                                log_id += 1
+                        except:
+                            pass
+                    
+                    # Add order logs
+                    orders = self.allocation_tracker.get_today_orders()
+                    for idx, order in enumerate(orders, 1):
+                        timestamp_str = order.get('timestamp', datetime.now().isoformat())
+                        if 'T' in str(timestamp_str):
+                            time_only = timestamp_str.split('T')[1][:8]
+                        else:
+                            time_only = datetime.now().strftime('%H:%M:%S')
+                        
+                        logs.append({
+                            'id': f'log_{log_id}',
+                            'timestamp': time_only,
+                            'message': f"Order placed: {order.get('symbol', 'N/A')} - ₹{order.get('amount', 0):.2f}",
+                            'severity': 'success'
+                        })
+                        log_id += 1
                 
                 # Reverse to show latest first
                 logs.reverse()
+                
+                logger.info(f"API /api/logs: Returning {len(logs)} log entries")
                 
                 return jsonify({
                     'success': True,

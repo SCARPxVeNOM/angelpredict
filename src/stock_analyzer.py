@@ -1,6 +1,6 @@
 """
 Stock Analyzer
-Analyzes Nifty 50 stocks to find those trading 5% below their 20 EMA
+Analyzes Nifty 50 stocks to find those trading 3% below their 20 EMA
 """
 from logzero import logger
 from config import config
@@ -27,7 +27,7 @@ class StockAnalyzer:
     
     def analyze_all_stocks(self):
         """
-        Analyze all Nifty 50 stocks and find those 5% below 20 EMA
+        Analyze all Nifty 50 stocks and find those 3% below 20 EMA
         
         Returns:
             list: List of eligible companies sorted by fall percentage (highest first)
@@ -77,7 +77,7 @@ class StockAnalyzer:
                 if fall_percentage is None:
                     continue
                 
-                # Check if fall percentage meets threshold (>= 5%)
+                # Check if fall percentage meets threshold (>= 3%)
                 # fall_percentage is positive when price is BELOW EMA (eligible)
                 # fall_percentage is negative when price is ABOVE EMA (not eligible)
                 if fall_percentage >= self.fall_threshold:
@@ -117,7 +117,7 @@ class StockAnalyzer:
     
     def get_top_n_stocks(self, n=5):
         """
-        Get top N stocks that are 5% below EMA, sorted by fall percentage
+        Get top N stocks that are 3% below EMA, sorted by fall percentage
         
         Args:
             n: Number of top stocks to return (default: 5)

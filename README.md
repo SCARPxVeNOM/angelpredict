@@ -1,6 +1,6 @@
 # Nifty 50 EMA-Based Algorithmic Trading Bot
 
-An algorithmic trading system that monitors Nifty 50 companies, identifies those trading 5% below their 20 EMA at market close, and automatically allocates ₹15,000 to the top 5 most fallen companies daily.
+An algorithmic trading system that monitors Nifty 50 companies, identifies those trading 3% below their 20 EMA at market close, and automatically allocates ₹15,000 to the top 5 most fallen companies daily.
 
 ## Features
 
@@ -70,7 +70,7 @@ The bot will:
 ### API Endpoints
 
 - `GET /api/health` - Health check
-- `GET /api/eligible-companies` - Get all companies currently eligible (5% below EMA)
+- `GET /api/eligible-companies` - Get all companies currently eligible (3% below EMA)
 - `GET /api/allocated-today` - Get companies allocated today
 - `GET /api/orders` - Get order history
 - `GET /api/status` - Get system status and last execution time

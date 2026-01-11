@@ -68,7 +68,7 @@ const StockTable = () => {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-100">Stock Scanner Results</h2>
-                <p className="text-xs text-gray-500 font-medium">Top 5 stocks with ≤ −5% drop • Click row for details</p>
+                <p className="text-xs text-gray-500 font-medium">Top 5 stocks with ≤ −3% drop • Click row for details</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

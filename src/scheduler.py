@@ -73,7 +73,7 @@ class TradingScheduler:
             eligible_stocks = self.stock_analyzer.analyze_all_stocks()
             
             if not eligible_stocks:
-                logger.warning("No eligible stocks found (>= 5% below EMA)")
+                logger.warning("No eligible stocks found (>= 3% below EMA)")
                 self.last_execution_result = {
                     'success': True,
                     'eligible_stocks': 0,
@@ -182,6 +182,7 @@ class TradingScheduler:
             'last_execution_result': self.last_execution_result,
             'next_run_time': self.scheduler.get_job('daily_trading_algorithm').next_run_time.isoformat() if self.scheduler and self.scheduler.get_job('daily_trading_algorithm') else None
         }
+
 
 
 

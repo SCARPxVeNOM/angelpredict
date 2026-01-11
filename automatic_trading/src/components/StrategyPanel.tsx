@@ -4,7 +4,7 @@ const StrategyPanel = () => {
   const rules = [
     { icon: Database, label: 'Data Source', value: 'Angel One SmartAPI' },
     { icon: Clock, label: 'Scan Time', value: 'After Market Close' },
-    { icon: TrendingDown, label: 'Drop Filter', value: '≤ −5%' },
+    { icon: TrendingDown, label: 'Drop Filter', value: '≤ −3%' },
     { icon: Target, label: 'Sort Logic', value: 'Ascending Drop' },
     { icon: Settings2, label: 'Picks', value: 'Top 5 Stocks' },
     { icon: DollarSign, label: 'Order Size', value: '₹15,000 per stock' }
