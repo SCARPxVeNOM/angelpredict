@@ -1,13 +1,16 @@
+import { useRef } from 'react'
 import CapitalOverview from './CapitalOverview'
 import StrategyPanel from './StrategyPanel'
 import StockTable from './StockTable'
 
 const Dashboard = () => {
+  const capitalOverviewRef = useRef<any>(null)
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <CapitalOverview />
+      <CapitalOverview ref={capitalOverviewRef} />
       <StrategyPanel />
-      <StockTable />
+      <StockTable capitalOverviewRef={capitalOverviewRef} />
     </div>
   )
 }

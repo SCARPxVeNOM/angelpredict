@@ -1,21 +1,41 @@
-import { useState } from 'react'
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { TrendingUp, Wallet, DollarSign, Activity, Sparkles } from 'lucide-react'
 import { formatCurrency } from '../utils/formatters'
 import { motion } from 'framer-motion'
 import { useAI } from '../contexts/AIContext'
-import { CapitalInfo } from '../services/api'
+import { CapitalInfo, apiService } from '../services/api'
 
-const CapitalOverview = () => {
+const CapitalOverview = forwardRef((props, ref) => {
   const { openDrawer } = useAI()
-  const [capital] = useState<CapitalInfo>({
+  const [capital, setCapital] = useState<CapitalInfo>({
     total: 300000,
     deployed: 0,
     available: 300000,
     scanCount: 0
   })
+  const [loading, setLoading] = useState(false)
 
-  // Don't auto-fetch capital - only load from backtest or manual trigger
-  // Remove automatic fetching to prevent unnecessary API calls
+  const fetchCapital = async () => {
+    try {
+      setLoading(true)
+      const data = await apiService.fetchCapital()
+      setCapital(data)
+    } catch (error) {
+      console.error('Error fetching capital:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Expose refresh function to parent components
+  useImperativeHandle(ref, () => ({
+    refresh: fetchCapital
+  }))
+
+  // Fetch capital on mount
+  useEffect(() => {
+    fetchCapital()
+  }, [])
 
   const handleExplainClick = () => {
     openDrawer('Explain capital allocation', { capital })
@@ -87,7 +107,7 @@ const CapitalOverview = () => {
               ease: [0.4, 0, 0.2, 1]
             }}
             whileHover={{ y: -2 }}
-            className={`glass rounded-2xl p-6 border ${card.borderColor} ${card.hoverBorder} transition-all cursor-default`}
+            className={`glass rounded-2xl p-6 border ${card.borderColor} ${card.hoverBorder} transition-all cursor-default ${loading ? 'opacity-50' : ''}`}
           >
             <div className="flex items-start justify-between mb-4">
               <div className={`w-12 h-12 rounded-xl ${card.bgColor} flex items-center justify-center`}>
@@ -110,6 +130,8 @@ const CapitalOverview = () => {
     </div>
     </div>
   )
-}
+})
+
+CapitalOverview.displayName = 'CapitalOverview'
 
 export default CapitalOverview

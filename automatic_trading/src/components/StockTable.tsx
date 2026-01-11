@@ -7,7 +7,11 @@ import { useAI } from '../contexts/AIContext'
 import type { Stock } from '../types'
 import { apiService } from '../services/api'
 
-const StockTable = () => {
+interface StockTableProps {
+  capitalOverviewRef?: React.RefObject<any>
+}
+
+const StockTable = ({ capitalOverviewRef }: StockTableProps) => {
   const [selectedStock, setSelectedStock] = useState<Stock | null>(null)
   const [stocks, setStocks] = useState<Stock[]>([])
   const [loading, setLoading] = useState(false)
@@ -49,6 +53,11 @@ const StockTable = () => {
         orderStatus: 'simulated' as const
       }))
       setStocks(updatedStocks)
+      
+      // Refresh capital overview
+      if (capitalOverviewRef?.current?.refresh) {
+        capitalOverviewRef.current.refresh()
+      }
       
       // Show success message
       alert(`✅ Successfully allocated ${response.orders.length} paper trades!\nTotal: ₹${response.total_allocated.toLocaleString()}`)
