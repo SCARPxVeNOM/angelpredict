@@ -67,15 +67,16 @@ class EMACalculator:
             logger.exception(f"Error calculating EMA: {e}")
             return None
     
-    def get_ema_for_symbol(self, symbol_token, exchange, days_back=30):
+    def get_ema_for_symbol(self, symbol_token, exchange, days_back=50):
         """
         Get EMA and current price for a symbol
         
         Args:
             symbol_token: Symbol token ID
             exchange: Exchange (NSE, BSE)
-            days_back: Number of days of historical data to fetch (default: 30 to ensure enough data)
-                      Market is open ~6.5 hours/day, so 30 days = ~195 hourly candles (more than enough)
+            days_back: Number of days of historical data to fetch (default: 50 for daily candles)
+                      For daily candles: 50 calendar days = ~35 trading days (enough for 20-day EMA)
+                      For hourly candles: 30 days = ~195 hourly candles (enough for 20-hour EMA)
         
         Returns:
             dict: {
@@ -87,9 +88,8 @@ class EMACalculator:
         """
         try:
             # Calculate date range - fetch more days to account for weekends/holidays
-            # Market hours: 9:15 AM to 3:30 PM IST (~6.5 hours/day)
-            # Using 30 days ensures we have enough data even with weekends/holidays
-            # This gives us ~195 trading hours (30 days * 6.5 hours) which is more than enough
+            # For daily candles: Need at least 20 trading days, so fetch 50 calendar days
+            # For hourly candles: Need at least 20 hours, so 30 days is more than enough
             to_date = datetime.now()
             from_date = to_date - timedelta(days=days_back)
             
