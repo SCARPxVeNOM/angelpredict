@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { useAI } from '../contexts/AIContext'
 import { CapitalInfo, apiService } from '../services/api'
 
-const CapitalOverview = forwardRef((props, ref) => {
+const CapitalOverview = forwardRef((_props, ref) => {
   const { openDrawer } = useAI()
   const [capital, setCapital] = useState<CapitalInfo>({
     total: 300000,
