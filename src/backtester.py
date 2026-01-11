@@ -95,14 +95,15 @@ class Backtester:
             # Analyze stocks for this specific date
             eligible_stocks = []
             
-            # Calculate date range for historical data (25 hours before target date)
+            # Calculate date range for historical data
+            # For daily candles: Need at least 20 trading days, so fetch 50 calendar days
             to_date = target_date.replace(hour=15, minute=30)  # Market close time
-            from_date = to_date - timedelta(hours=25)
+            from_date = to_date - timedelta(days=50)  # 50 days back to ensure enough trading days
             
             from_date_str = from_date.strftime("%Y-%m-%d %H:%M")
             to_date_str = to_date.strftime("%Y-%m-%d %H:%M")
             
-            logger.info(f"Fetching historical data from {from_date_str} to {to_date_str}")
+            logger.info(f"Fetching historical data from {from_date_str} to {to_date_str} using {config.EMA_TIMEFRAME} timeframe")
             
             for company in companies:
                 symbol = company.get('symbol')
@@ -159,6 +160,10 @@ class Backtester:
                             'ema': ema,
                             'fall_percentage': fall_percentage
                         })
+                        logger.debug(
+                            f"✓ {symbol}: Price={current_price:.2f}, EMA={ema:.2f}, "
+                            f"Fall={fall_percentage:.2f}% (ELIGIBLE)"
+                        )
                         
                 except Exception as e:
                     logger.debug(f"Error analyzing {symbol} for {target_date.strftime('%Y-%m-%d')}: {e}")
