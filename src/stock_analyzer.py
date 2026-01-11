@@ -80,6 +80,15 @@ class StockAnalyzer:
                 # Check if fall percentage meets threshold (>= 3%)
                 # fall_percentage is positive when price is BELOW EMA (eligible)
                 # fall_percentage is negative when price is ABOVE EMA (not eligible)
+                
+                # Log ALL stocks, not just eligible ones
+                logger.info(
+                    f"{'✓' if fall_percentage >= self.fall_threshold else '✗'} {symbol} ({name}): "
+                    f"Price={current_price:.2f}, EMA={ema:.2f}, Fall={fall_percentage:.2f}% "
+                    f"({'ELIGIBLE' if fall_percentage >= self.fall_threshold else 'NOT eligible'} - "
+                    f"threshold {self.fall_threshold}%)"
+                )
+                
                 if fall_percentage >= self.fall_threshold:
                     eligible_stocks.append({
                         'symbol': symbol,
@@ -90,16 +99,6 @@ class StockAnalyzer:
                         'ema': ema,
                         'fall_percentage': fall_percentage
                     })
-                    
-                    logger.info(
-                        f"✓ {symbol} ({name}): Price={current_price:.2f}, "
-                        f"EMA={ema:.2f}, Fall={fall_percentage:.2f}% (ELIGIBLE - >= {self.fall_threshold}%)"
-                    )
-                else:
-                    logger.debug(
-                        f"✗ {symbol}: Fall={fall_percentage:.2f}% "
-                        f"(NOT eligible - below threshold {self.fall_threshold}%)"
-                    )
                     
             except Exception as e:
                 logger.exception(f"Error analyzing {symbol}: {e}")
