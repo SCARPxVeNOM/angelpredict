@@ -5,7 +5,7 @@ An algorithmic trading system that monitors Nifty 50 companies, identifies those
 ## Features
 
 - **Automated Analysis**: Monitors all Nifty 50 companies daily
-- **EMA Calculation**: Uses 20-period EMA based on hourly candles
+- **EMA Calculation**: Uses 20-period EMA based on daily candles
 - **Smart Filtering**: Identifies companies trading 5% or more below their 20 EMA
 - **Automatic Allocation**: Allocates ₹15,000 per company to top 5 eligible stocks
 - **Duplicate Prevention**: Prevents allocating to the same company multiple times in a day
@@ -83,7 +83,7 @@ Edit `config/config.py` to customize:
 
 - **Capital Settings**: `TOTAL_CAPITAL` (default: ₹3,00,000), `ALLOCATION_PER_COMPANY` (default: ₹15,000)
 - **Market Timing**: `MARKET_CLOSE_HOUR` (default: 15), `MARKET_CLOSE_MINUTE` (default: 30)
-- **EMA Parameters**: `EMA_PERIOD` (default: 20), `EMA_TIMEFRAME` (default: "ONE_HOUR")
+- **EMA Parameters**: `EMA_PERIOD` (default: 20), `EMA_TIMEFRAME` (default: "ONE_DAY")
 - **Trading Threshold**: `FALL_THRESHOLD` (default: 5.0%)
 - **Order Settings**: Product type, duration, etc.
 
